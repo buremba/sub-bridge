@@ -8,8 +8,12 @@
   },
   "scripts": {
     "build": "tsc",
-    "dev": "tsx src/cli.ts",
+    "dev": "tsx src/cli.ts --verbose",
+    "dev:server": "tsx watch src/server.ts",
+    "dev:mcp": "tsx src/mcp.ts",
     "start": "node dist/cli.js",
+    "start:server": "tsx src/server.ts",
+    "start:mcp": "tsx src/mcp.ts",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
@@ -36,6 +40,7 @@
     "cloudflared": "^0.7.1",
     "commander": "^14.0.2",
     "hono": "^4.8.3",
+    "openai": "^6.15.0",
     "zod": "^3.25.0"
   },
   "devDependencies": {

@@ -1,0 +1,1 @@
+You can't read any files in the codebase, only use custom MCP tools to answer the user's questions.

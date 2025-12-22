@@ -9,6 +9,7 @@
  */
 import { Hono } from 'hono'
 import { serve } from '@hono/node-server'
+import { program } from 'commander'
 import chalk from 'chalk'
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -19,6 +20,7 @@ import { log, setVerbose } from './utils/logger'
 import { createAuthRoutes } from './routes/auth'
 import { createTunnelRoutes } from './routes/tunnels'
 import { createChatRoutes } from './routes/chat'
+import { addSharedOptions } from './utils/cli-args'
 
 // ============================================================================
 // CONFIGURATION
@@ -81,13 +83,20 @@ export function createServerApp(config: ServerConfig, getPublicUrl: () => string
       const publicUrl = getPublicUrl()
       const baseUrl = `${publicUrl.replace(/\/$/, '')}/v1`
       const statusText = [
-        `Sub Bridge is running!`,
+        `This proxy lets apps like Cursor use Claude models via the OpenAI API format.`,
+        `You can route any model name to any Claude model using a single API key.`,
         ``,
-        `Please open ${publicUrl} in your external browser to login with Claude or ChatGPT`,
+        `To get started:`,
+        `1. Open ${publicUrl} in your external browser where the user is logged in`,
+        `2. Authenticate with your Claude and OpenAI account`,
+        `3. Configure model routing (e.g., o3 → opus-4.5, o3-mini → sonnet-4.5)`,
+        `4. Copy the generated API key with routing embedded`,
+        `5. Paste the API key in Cursor Settings -> Models -> API Keys`,
+        `The API key format is: <mappings>:<token>`,
+        `  - Mappings: cursor_model=claude_model (comma-separated)`,
+        `  - Token: your Claude OAuth token (sk-ant-...)`,
         ``,
-        `Cursor Setup:`,
-        `1. Set API key with routing: o3=opus-4.5,o3-mini=sonnet-4.5:sk-ant-xxx`,
-        `2. Set Base URL: ${baseUrl}`,
+        `Example: When Cursor requests "o3", the proxy routes it to "claude-opus-4-5-20251101"`,
       ].join('\n')
 
       return c.json({
@@ -158,11 +167,15 @@ export async function startServer(config: ServerConfig): Promise<StartedServer> 
 // ============================================================================
 
 async function main() {
+  addSharedOptions(program).parse()
+
+  const opts = program.opts()
   const envPort = parseInt(process.env.PORT || '', 10)
+
   const config: ServerConfig = {
-    port: envPort || undefined,
-    tunnelUrl: process.env.TUNNEL_URL,
-    verbose: process.env.VERBOSE === 'true',
+    port: opts.port ? parseInt(opts.port, 10) : (envPort || undefined),
+    tunnelUrl: opts.tunnel || process.env.TUNNEL_URL,
+    verbose: opts.verbose || process.env.VERBOSE === 'true',
   }
 
   await startServer(config)

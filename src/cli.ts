@@ -16,16 +16,16 @@ import chalk from 'chalk'
 import { startServer, type ServerConfig } from './server'
 import { findPort } from './utils/port'
 import { startMcpServer } from './mcp/proxy'
+import { addSharedOptions } from './utils/cli-args'
 
 const log = (...args: Parameters<typeof console.error>) => console.error(...args)
 
 async function main() {
-  program
+  const prog = program
     .name('sub-bridge')
     .description('MCP bridge for ChatGPT Pro, Claude Max, etc. in Cursor')
-    .option('-p, --port <number>', 'Local proxy port (default: 8787 or next available)')
-    .option('--tunnel <url>', 'Existing tunnel URL (e.g., local.buremba.com)')
-    .option('--verbose', 'Show full messages and tools without truncation')
+  
+  addSharedOptions(prog)
     .option('--server-only', 'Run HTTP server only (no MCP)')
     .option('--mcp-only', 'Run MCP proxy only (discovers existing server)')
     .parse()

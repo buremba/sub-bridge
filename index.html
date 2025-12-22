@@ -22,8 +22,8 @@
 
     <!-- Connect Section -->
     <div class="flex items-center justify-between">
-      <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Connect</h2>
-      <a x-show="!claude.connected && !chatgpt.connected" :href="window.location.href" target="_blank" class="text-[10px] text-neutral-500 hover:text-neutral-300">Open in external browser if login fails</a>
+      <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Providers</h2>
+      <a class="text-[10px] text-neutral-500 hover:text-neutral-300">Your credentials are only stored in your browser</a>
     </div>
     <section class="rounded-xl border border-neutral-800 bg-neutral-900/70 p-4 shadow-sm">
       <div class="flex flex-col gap-3">
@@ -69,6 +69,15 @@
           <div class="flex items-center gap-2 shrink-0">
             <span class="h-2 w-2 rounded-full" :class="claude.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="claude.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="claude.connected ? 'Connected' : 'Not connected'"></span>
+            <template x-if="claude.connected">
+              <button
+                @click="disconnectClaude()"
+                class="ml-1 text-xs text-neutral-400 hover:text-red-400 transition"
+                title="Disconnect and clear token"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </template>
           </div>
         </div>
         <!-- Claude Error -->
@@ -80,18 +89,16 @@
         <div class="flex items-center gap-3">
           <!-- Button -->
           <button
-            @click="chatgpt.showInput ? null : startChatGPT(); chatgpt.showInput = true"
+            @click="if(!chatgpt.showInput) { startChatGPT(); window.open('https://auth.openai.com/codex/device', '_blank'); } chatgpt.showInput = true"
             :disabled="chatgpt.polling"
             class="group inline-flex items-center justify-center gap-2 rounded-lg bg-[#10a37f] px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d8a6a] disabled:opacity-50 shrink-0"
           >
             <svg class="h-4 w-4 text-white" viewBox="0 0 24 24" aria-hidden="true"><use href="#logo-openai"></use></svg>
-            <span x-text="chatgpt.polling ? 'Checking...' : (chatgpt.showInput ? 'Enter Device ID' : 'Generate code for ChatGPT')"></span>
+            <span x-text="chatgpt.polling ? 'Checking...' : (chatgpt.showInput ? 'Enter Device ID' : 'Login with ChatGPT')"></span>
           </button>
           <!-- Login link + Input (shown after first click) -->
           <template x-if="chatgpt.showInput">
             <div class="flex items-center gap-2">
-              <a href="https://auth.openai.com/codex/device" target="_blank" class="text-sky-400 hover:text-sky-300 hover:underline text-sm whitespace-nowrap">login here</a>
-              <span class="text-neutral-500 text-sm">enter</span>
               <input
                 type="text"
                 :value="chatgpt.deviceId"
@@ -107,6 +114,15 @@
           <div class="flex items-center gap-2 shrink-0">
             <span class="h-2 w-2 rounded-full" :class="chatgpt.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="chatgpt.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="chatgpt.connected ? 'Connected' : 'Not connected'"></span>
+            <template x-if="chatgpt.connected">
+              <button
+                @click="disconnectChatGPT()"
+                class="ml-1 text-xs text-neutral-400 hover:text-red-400 transition"
+                title="Disconnect and clear token"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </template>
           </div>
         </div>
         <!-- ChatGPT Error -->
@@ -117,50 +133,7 @@
       </div>
     </section>
 
-    <!-- Routing Section (shown when Claude connected) -->
-    <template x-if="claude.connected">
-      <div>
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Routing</h2>
-        <section class="mt-2 rounded-xl border border-neutral-800 bg-neutral-900/70 p-4 shadow-sm">
-          <div class="flex flex-col gap-2">
-            <template x-for="(route, i) in routes" :key="i">
-              <div class="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
-                <input
-                  type="text"
-                  list="cursor-models"
-                  x-model="route.cursor"
-                  placeholder="Cursor model..."
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
-                >
-                <span class="text-neutral-500 px-1">-></span>
-                <input
-                  type="text"
-                  list="claude-models"
-                  x-model="route.claude"
-                  placeholder="Claude model..."
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
-                >
-                <button
-                  @click="routes.splice(i, 1)"
-                  class="p-2 text-neutral-500 hover:text-red-400 transition"
-                  title="Remove route"
-                >
-                  <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                </button>
-              </div>
-            </template>
-            <button
-              @click="routes.push({ cursor: '', claude: '' })"
-              class="inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-200 transition mt-1"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-              Add Route
-            </button>
-          </div>
-
-        </section>
-      </div>
-    </template>
+   
 
     <!-- Datalists for autocomplete -->
     <datalist id="cursor-models">
@@ -179,200 +152,231 @@
     <!-- DEFAULT VIEW: API Key + Tunnel (when no target app) -->
     <!-- ============================================================ -->
       <div class="space-y-4" x-init="fetchTunnelProviders()">
-        <!-- Connection Details Section -->
         <section class="space-y-2">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Connection Details</h2>
-          <div class="rounded-xl border border-neutral-800 bg-neutral-900/70 p-4 shadow-sm flex flex-col gap-3">
-            <div class="flex items-center gap-3">
+          <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Gateways</h2>
+          <div class="rounded-xl border border-neutral-800 bg-neutral-900/70 shadow-sm flex flex-col gap-3">
+            <div class="flex items-center gap-3 p-4 pb-0">
               <input
                 type="text"
-                :value="(tunnel.status.active ? tunnel.status.publicUrl : publicUrl) + '/v1'"
+                :value="effectivePublicUrl + '/v1'"
                 readonly
                 @focus="$el.select()"
                 class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-neutral-600 focus:outline-none font-mono"
               >
               <label class="text-xs text-neutral-500 shrink-0 w-28 text-right">OpenAI Base URL</label>
             </div>
-            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-3 p-4 pb-0 pt-0" x-if="claude.connected">
+                <div class="flex flex-col gap-2">
+                  <template x-for="(route, i) in routes" :key="i">
+                    <div class="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
+                      <input
+                        type="text"
+                        list="cursor-models"
+                        x-model="route.cursor"
+                        placeholder="Cursor model..."
+                        class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
+                      >
+                      <span class="text-neutral-500 px-1">-></span>
+                      <input
+                        type="text"
+                        list="claude-models"
+                        x-model="route.claude"
+                        placeholder="Claude model..."
+                        class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
+                      >
+                      <button
+                        @click="routes.splice(i, 1)"
+                        class="p-2 text-neutral-500 hover:text-red-400 transition"
+                        title="Remove route"
+                      >
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    </div>
+                  </template>
+                  <button
+                    @click="routes.push({ cursor: '', claude: '' })"
+                    class="inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-200 transition mt-1"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Add Route
+                  </button>
+                </div>
+                <label class="text-xs text-neutral-500 shrink-0 w-28 text-right">Routes</label>
+
+              </div>
+            <div class="flex items-center gap-3 p-4 border-t border-neutral-800">
               <input
                 type="text"
                 :value="apiKey"
                 readonly
                 @focus="$el.select()"
-                placeholder="o3=opus-4.5:sk-connect-to-generate-key"
+                placeholder="Connect to a provider first..."
                 class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-neutral-600 focus:outline-none font-mono"
               >
-              <label class="text-xs text-neutral-500 shrink-0 w-28 text-right">API Key</label>
+              <label class="text-xs text-neutral-500 shrink-0 w-28 text-right">Generated API Key</label>
             </div>
           </div>
-        </section>
-
-        <!-- Integrate Section -->
-        <section class="space-y-2">
-          <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Integrate</h2>
-          <div class="rounded-xl border border-neutral-800 bg-neutral-900/70 p-4 shadow-sm">
-            <div class="flex flex-wrap gap-2">
-              <a
-                href="?to=cursor"
-                class="inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm font-medium text-neutral-200 hover:bg-neutral-700 transition"
-              >
-                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-                Cursor
-              </a>
-              <!-- Add more integrations here -->
-            </div>
-          </div>
-        </section>
-      </div>
-
-    <!-- ============================================================ -->
-    <!-- CURSOR VIEW: Full setup instructions -->
-    <!-- ============================================================ -->
-    <template x-if="targetApp === 'cursor'">
-      <section class="space-y-2">
-        <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Setup Cursor</h2>
-        <div class="rounded-xl border border-neutral-800 bg-neutral-900/70 p-4 shadow-sm">
-          <ol class="space-y-2 text-sm text-neutral-200">
-            <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">1</span><span>Open Cursor Settings -> Models -> API Keys</span></li>
-            <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">2</span><span>Enable "OpenAI API Key" toggle</span></li>
-            <li class="flex items-start gap-2">
-              <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">3</span>
-              <div class="flex-1 space-y-1">
-                <span>Set API key:</span>
-                <input
-                  type="text"
-                  :value="apiKey"
-                  readonly
-                  @focus="$el.select()"
-                  placeholder="Connect to a provider first..."
-                  class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 focus:border-neutral-600 focus:outline-none"
-                >
-              </div>
-            </li>
-            <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">4</span><span>Enable "Override OpenAI Base URL"</span></li>
-            <li class="flex flex-col gap-1">
-              <div class="flex items-start gap-2">
-                <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px] shrink-0">5</span>
-                <div class="flex-1 space-y-2">
-                  <!-- Show URL when tunnel is active -->
-                  <template x-if="tunnel.status.active">
-                    <div>
-                      <span>Set Base URL:</span>
-                      <input
-                        type="text"
-                        :value="tunnel.status.publicUrl + '/v1'"
-                        readonly
-                        @focus="$el.select()"
-                        class="ml-1 rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs font-mono border-none focus:outline-none"
-                      >
-                    </div>
-                  </template>
-                  <!-- Show instructions when no tunnel -->
-                  <template x-if="!tunnel.status.active">
-                    <div>
-                      <span>Set Base URL: Expose port <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="port"></code> publicly or</span>
-                      <button
-                        type="button"
-                        @click="tunnel.showPanel = !tunnel.showPanel; if(tunnel.showPanel && !tunnel.providers.length) fetchTunnelProviders()"
-                        class="text-sky-400 hover:text-sky-300 hover:underline"
-                      >create a tunnel</button>
-                    </div>
-                  </template>
-                  <!-- Manage tunnel link when active -->
-                  <template x-if="tunnel.status.active">
-                    <button
-                      type="button"
-                      @click="tunnel.showPanel = !tunnel.showPanel"
-                      class="text-sky-400 hover:text-sky-300 hover:underline text-sm"
-                      x-text="tunnel.showPanel ? 'hide tunnel options' : 'manage tunnel'"
-                    ></button>
-                  </template>
-                  <!-- Tunnel Panel (collapsible in cursor view) -->
-                  <template x-if="tunnel.showPanel">
-                    <div class="rounded-lg border border-neutral-800 bg-neutral-900/50 p-2 space-y-3">
-                      <!-- Provider Tabs -->
-                      <div class="flex flex-wrap gap-2" x-show="tunnel.providers.length > 0">
-                        <template x-for="p in tunnel.providers.filter(p => p.available)" :key="p.id">
-                          <button
-                            @click="tunnel.selectedProvider = p.id"
-                            :class="tunnel.selectedProvider === p.id ? 'bg-neutral-700 text-white border-neutral-600' : 'bg-neutral-950 text-neutral-400 border-neutral-800'"
-                            class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition"
-                            x-text="p.name"
-                          ></button>
-                        </template>
-                      </div>
-                      <!-- No providers -->
-                      <p x-show="tunnel.providers.length === 0 && !tunnel.loading" class="text-sm text-neutral-400">
-                        No tunnel providers found (install cloudflared, ngrok, or tailscale).
-                      </p>
-                      <!-- Loading -->
-                      <p x-show="tunnel.loading" class="text-sm text-neutral-400">Loading providers...</p>
-                      <!-- Active Tunnel -->
-                      <template x-if="tunnel.status.active">
-                        <div class="space-y-2">
-                          <div class="flex items-center gap-2 text-sm">
-                            <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
-                            <span class="font-semibold text-emerald-400">Active</span>
+        </section>   
+            <!-- Integrate Section -->
+            <section class="space-y-2">
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-neutral-400">Integrations</h2>
+              <div class="rounded-xl border border-neutral-800 bg-neutral-900/70 shadow-sm overflow-hidden">
+                
+                <!-- Tabs -->
+                <div class="flex flex-wrap gap-2 p-4" :class="{'border-b border-neutral-800': targetApp}">
+                  <button
+                    @click="setTargetApp('cursor')"
+                    :class="targetApp === 'cursor' ? 'bg-neutral-100 text-neutral-950' : 'bg-neutral-800 text-neutral-200 border border-neutral-700 hover:bg-neutral-700'"
+                    class="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition"
+                  >
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                    Cursor
+                  </button>
+                  <!-- Add more integrations here -->
+                </div>
+        
+                <!-- Cursor Setup Instructions -->
+                <div x-show="targetApp === 'cursor'" class="p-4 bg-neutral-900/30">
+                  <ol class="space-y-2 text-sm text-neutral-200">
+                    <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">1</span><span>Open Cursor Settings -> Models -> API Keys</span></li>
+                    <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">2</span><span>Enable "OpenAI API Key" toggle</span></li>
+                    <li class="flex flex-col gap-1">
+                      <div class="flex items-center gap-2">
+                        <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">3</span>
+                        <div class="flex-1 space-y-1">
+                          <div class="relative w-full">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs pr-1">Set API Key:</span>
+                            <input
+                              type="text"
+                              :value="apiKey"
+                              readonly
+                              @focus="$el.select()"
+                              placeholder="Connect to a provider first..."
+                              class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 focus:border-neutral-600 focus:outline-none font-mono pl-[95px]"
+                            >
                           </div>
-                          <input
-                            type="text"
-                            :value="tunnel.status.publicUrl + '/v1'"
-                            readonly
-                            @focus="$el.select()"
-                            class="w-full rounded-lg border border-emerald-500/30 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 font-mono"
-                          >
-                          <button
-                            @click="stopTunnel()"
-                            class="w-full rounded-lg bg-red-500/90 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600"
-                          >Stop Tunnel</button>
                         </div>
-                      </template>
-                      <!-- Start Form (when not active) -->
-                      <template x-if="!tunnel.status.active && tunnel.providers.some(p => p.available)">
-                        <div class="space-y-2">
-                          <input
-                            x-show="tunnel.providers.find(p => p.id === tunnel.selectedProvider)?.supportsNamedTunnels"
-                            type="text"
-                            x-model="tunnel.customDomain"
-                            placeholder="Custom domain (optional)"
-                            class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
-                          >
-                          <button
-                            @click="startTunnel()"
-                            :disabled="tunnel.starting"
-                            class="w-full rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-950 hover:bg-white disabled:opacity-50"
-                            x-text="tunnel.starting ? 'Starting...' : 'Start Tunnel'"
-                          ></button>
+                      </div>
+                    </li>
+                    <li class="flex items-start gap-2"><span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">4</span><span>Enable "Override OpenAI Base URL"</span></li>
+                    <li class="flex flex-col gap-1">
+                      <div class="flex items-start gap-2">
+                        <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px] shrink-0">5</span>
+                        <div class="flex-1 space-y-2">
+                          <!-- Show URL when tunnel is active (dynamic or pre-configured) -->
+                          <template x-if="hasTunnel">
+                              <div class="relative w-full" style="margin-top: 0px !important;">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500 text-xs pr-1">Set Base URL:</span>
+                                <input
+                                  type="text"
+                                  :value="effectivePublicUrl + '/v1'"
+                                  readonly
+                                  @focus="$el.select()"
+                                  class="rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 focus:border-neutral-600 focus:outline-none font-mono pl-[100px] w-full"
+                                >
+                            </div>
+                          </template>
+                          <!-- Show instructions when no tunnel -->
+                          <template x-if="!hasTunnel">
+                            <div>
+                              <span>Set Base URL: Expose port <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="port"></code> publicly or</span>
+                              <button
+                                type="button"
+                                @click="tunnel.showPanel = !tunnel.showPanel; if(tunnel.showPanel && !tunnel.providers.length) fetchTunnelProviders()"
+                                class="text-sky-400 hover:text-sky-300 hover:underline"
+                              >create a tunnel</button>
+                            </div>
+                          </template>
+                          <!-- Manage tunnel link when dynamic tunnel is active (not for pre-configured) -->
+                          <template x-if="tunnel.status.active">
+                            <button
+                              type="button"
+                              @click="tunnel.showPanel = !tunnel.showPanel"
+                              class="text-sky-400 hover:text-sky-300 hover:underline text-sm"
+                              x-text="tunnel.showPanel ? 'hide tunnel options' : 'manage tunnel'"
+                            ></button>
+                          </template>
+                          <!-- Tunnel Panel (collapsible in cursor view) -->
+                          <template x-if="tunnel.showPanel">
+                            <div class="rounded-lg border border-neutral-800 bg-neutral-900/50 p-2 space-y-3">
+                              <!-- Provider Tabs -->
+                              <div class="flex flex-wrap gap-2" x-show="tunnel.providers.length > 0">
+                                <template x-for="p in tunnel.providers.filter(p => p.available)" :key="p.id">
+                                  <button
+                                    @click="tunnel.selectedProvider = p.id"
+                                    :class="tunnel.selectedProvider === p.id ? 'bg-neutral-700 text-white border-neutral-600' : 'bg-neutral-950 text-neutral-400 border-neutral-800'"
+                                    class="inline-flex items-center justify-center rounded-lg border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition"
+                                    x-text="p.name"
+                                  ></button>
+                                </template>
+                              </div>
+                              <!-- No providers -->
+                              <p x-show="tunnel.providers.length === 0 && !tunnel.loading" class="text-sm text-neutral-400">
+                                No tunnel providers found (install cloudflared, ngrok, or tailscale).
+                              </p>
+                              <!-- Loading -->
+                              <p x-show="tunnel.loading" class="text-sm text-neutral-400">Loading providers...</p>
+                              <!-- Active Dynamic Tunnel (with stop button) -->
+                              <template x-if="tunnel.status.active">
+                                <div class="space-y-2">
+                                  <div class="flex items-center gap-2 text-sm">
+                                    <span class="inline-flex h-2 w-2 rounded-full bg-emerald-400"></span>
+                                    <span class="font-semibold text-emerald-400">Active</span>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    :value="tunnel.status.publicUrl + '/v1'"
+                                    readonly
+                                    @focus="$el.select()"
+                                    class="w-full rounded-lg border border-emerald-500/30 bg-neutral-950 px-3 py-2 text-xs text-neutral-100 font-mono"
+                                  >
+                                  <button
+                                    @click="stopTunnel()"
+                                    class="w-full rounded-lg bg-red-500/90 px-3 py-2 text-sm font-semibold text-white hover:bg-red-600"
+                                  >Stop Tunnel</button>
+                                </div>
+                              </template>
+                              <!-- Start Form (when no dynamic tunnel and not pre-configured) -->
+                              <template x-if="!tunnel.status.active && !hasExternalUrl && tunnel.providers.some(p => p.available)">
+                                <div class="space-y-2">
+                                  <input
+                                    x-show="tunnel.providers.find(p => p.id === tunnel.selectedProvider)?.supportsNamedTunnels"
+                                    type="text"
+                                    x-model="tunnel.customDomain"
+                                    placeholder="Custom domain (optional)"
+                                    class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
+                                  >
+                                  <button
+                                    @click="startTunnel()"
+                                    :disabled="tunnel.starting"
+                                    class="w-full rounded-lg bg-neutral-100 px-3 py-2 text-sm font-semibold text-neutral-950 hover:bg-white disabled:opacity-50"
+                                    x-text="tunnel.starting ? 'Starting...' : 'Start Tunnel'"
+                                  ></button>
+                                </div>
+                              </template>
+                              <!-- Error -->
+                              <p x-show="tunnel.error" class="text-sm text-red-400" x-text="tunnel.error"></p>
+                            </div>
+                          </template>
                         </div>
-                      </template>
-                      <!-- Error -->
-                      <p x-show="tunnel.error" class="text-sm text-red-400" x-text="tunnel.error"></p>
-                    </div>
-                  </template>
+                      </div>
+                    </li>
+                    <li class="flex items-start gap-2">
+                      <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">6</span>
+                      <span>
+                        <template x-if="claude.connected && routes.length > 0 && routes[0].cursor && routes[0].claude">
+                          <span>Select <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="routes[0].cursor"></code> model in Cursor agent to connect <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="routes[0].claude"></code></span>
+                        </template>
+                        <template x-if="!claude.connected || !routes.length || !routes[0].cursor || !routes[0].claude">
+                          <span>Select an OpenAI model in Cursor agent</span>
+                        </template>
+                      </span>
+                    </li>
+                  </ol>
                 </div>
               </div>
-            </li>
-            <li class="flex items-start gap-2">
-              <span class="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-neutral-800 text-[11px]">6</span>
-              <span>
-                <template x-if="claude.connected && routes.length > 0 && routes[0].cursor && routes[0].claude">
-                  <span>Select <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="routes[0].cursor"></code> model in Cursor agent to connect <code class="rounded bg-neutral-800/80 px-1.5 py-0.5 text-xs" x-text="routes[0].claude"></code></span>
-                </template>
-                <template x-if="!claude.connected || !routes.length || !routes[0].cursor || !routes[0].claude">
-                  <span>Select an OpenAI model in Cursor agent</span>
-                </template>
-              </span>
-            </li>
-          </ol>
-        </div>
-      </section>
-    </template>
-
-    <!-- Footer -->
-    <footer class="space-y-1">
-      <div class="text-xs font-medium text-emerald-400" x-text="'Running at ' + publicUrl"></div>
-    </footer>
-
+            </section>
+          </div>
   </main>
 
   <script>
@@ -390,6 +394,7 @@
         chatgpt: {
           connected: false,
           token: null,
+          accountId: null,
           deviceId: '',
           sessionId: null,
           polling: false,
@@ -422,21 +427,83 @@
         // Target app from ?to= query parameter (cursor, etc.)
         targetApp: new URLSearchParams(window.location.search).get('to') || '',
 
+        // Check if we have an external URL (pre-configured tunnel via --tunnel flag)
+        get hasExternalUrl() {
+          return this.publicUrl.startsWith('https://') && !this.publicUrl.includes('localhost');
+        },
+
+        // Effective public URL (dynamic tunnel takes precedence, then pre-configured)
+        get effectivePublicUrl() {
+          return this.tunnel.status.active ? this.tunnel.status.publicUrl : this.publicUrl;
+        },
+
+        // Whether we have any tunnel (dynamic or pre-configured)
+        get hasTunnel() {
+          return this.tunnel.status.active || this.hasExternalUrl;
+        },
+
         // Debounce timer
         _debounce: null,
 
-        // Computed API key (format: o3=opus-4.5,o3-mini=sonnet-4.5:sk-ant-xxx)
+        // Computed API key (format: o3=opus-4.5,o3-mini=sonnet-4.5:sk-ant-xxx sk-xxx)
         get apiKey() {
-          if (!this.claude.token) return '';
-          const mappings = this.routes
-            .filter(r => r.cursor && r.claude)
-            .map(r => `${r.cursor}=${r.claude}`)
-            .join(',');
-          return mappings ? `${mappings}:${this.claude.token}` : this.claude.token;
+          const keys = [];
+
+          // Add Claude token with mappings
+          if (this.claude.token) {
+            const mappings = this.routes
+              .filter(r => r.cursor && r.claude)
+              .map(r => `${r.cursor}=${r.claude}`)
+              .join(',');
+            const claudeKey = mappings ? `${mappings}:${this.claude.token}` : this.claude.token;
+            keys.push(claudeKey);
+          }
+
+          // Add ChatGPT token (append account id for ChatGPT backend)
+          if (this.chatgpt.token) {
+            const chatgptKey = this.chatgpt.accountId
+              ? `${this.chatgpt.token}#${this.chatgpt.accountId}`
+              : this.chatgpt.token;
+            keys.push(chatgptKey);
+          }
+
+          return keys.join(' ');
+        },
+
+        // Update target app and URL query param without reload
+        setTargetApp(app) {
+          if (this.targetApp === app) {
+            this.targetApp = '';
+            const url = new URL(window.location);
+            url.searchParams.delete('to');
+            window.history.pushState({}, '', url);
+          } else {
+            this.targetApp = app;
+            const url = new URL(window.location);
+            url.searchParams.set('to', app);
+            window.history.pushState({}, '', url);
+          }
         },
 
         // Initialize
         async init() {
+          // Restore tokens from localStorage
+          const savedClaudeToken = localStorage.getItem('claude_token');
+          if (savedClaudeToken) {
+            this.claude.token = savedClaudeToken;
+            this.claude.connected = true;
+          }
+
+          const savedChatGPTToken = localStorage.getItem('chatgpt_token');
+          if (savedChatGPTToken) {
+            this.chatgpt.token = savedChatGPTToken;
+            this.chatgpt.connected = true;
+          }
+          const savedChatGPTAccountId = localStorage.getItem('chatgpt_account_id');
+          if (savedChatGPTAccountId) {
+            this.chatgpt.accountId = savedChatGPTAccountId;
+          }
+
           try {
             const res = await fetch('/api/config');
             const config = await res.json();
@@ -473,6 +540,8 @@
               this.claude.token = data.accessToken;
               this.claude.code = '';
               this.claude.showInput = false;
+              // Save token to localStorage
+              localStorage.setItem('claude_token', data.accessToken);
             } else {
               this.claude.error = data.error;
             }
@@ -481,6 +550,16 @@
           } finally {
             this.claude.loading = false;
           }
+        },
+
+        // Disconnect Claude and clear token
+        disconnectClaude() {
+          this.claude.connected = false;
+          this.claude.token = null;
+          this.claude.code = '';
+          this.claude.showInput = false;
+          this.claude.error = null;
+          localStorage.removeItem('claude_token');
         },
 
         // Start ChatGPT device flow
@@ -514,8 +593,17 @@
             if (data.status === 'success') {
               this.chatgpt.connected = true;
               this.chatgpt.token = data.accessToken;
+              this.chatgpt.accountId = data.accountId || null;
               this.chatgpt.polling = false;
               this.chatgpt.showInput = false;
+              // Save token to localStorage
+              localStorage.setItem('chatgpt_token', data.accessToken);
+              if (data.accountId) {
+                localStorage.setItem('chatgpt_account_id', data.accountId);
+              } else {
+                localStorage.removeItem('chatgpt_account_id');
+                this.chatgpt.error = 'Missing ChatGPT account id. Please re-login.';
+              }
             } else if (data.status === 'pending') {
               setTimeout(() => this.pollChatGPT(), 5000);
             } else {
@@ -526,6 +614,20 @@
             this.chatgpt.error = 'Polling failed: ' + e.message;
             this.chatgpt.polling = false;
           }
+        },
+
+        // Disconnect ChatGPT and clear token
+        disconnectChatGPT() {
+          this.chatgpt.connected = false;
+          this.chatgpt.token = null;
+          this.chatgpt.accountId = null;
+          this.chatgpt.deviceId = '';
+          this.chatgpt.sessionId = null;
+          this.chatgpt.polling = false;
+          this.chatgpt.showInput = false;
+          this.chatgpt.error = null;
+          localStorage.removeItem('chatgpt_token');
+          localStorage.removeItem('chatgpt_account_id');
         },
 
         // Fetch tunnel providers
