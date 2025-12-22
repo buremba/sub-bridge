@@ -80,19 +80,34 @@ export function logRequest(
         else if (msg.type === 'ai') role = 'assistant'
         else if (msg.type === 'function' || msg.type === 'tool') role = 'tool'
         else if (msg.type === 'system') role = 'system'
+        else if (msg.type === 'function_call') role = 'tool'
+        else if (msg.type === 'function_call_output') role = 'tool'
       }
       let content = ''
-      if (typeof msg.content === 'string') {
+
+      // Handle Responses API function_call type
+      if (msg.type === 'function_call') {
+        const argsPreview = verboseMode ? msg.arguments : truncate(msg.arguments || '', 50)
+        content = `[call: ${msg.name}(${argsPreview})]`
+      }
+      // Handle Responses API function_call_output type
+      else if (msg.type === 'function_call_output') {
+        const outputPreview = verboseMode ? String(msg.output || '') : truncate(String(msg.output || ''), 50)
+        content = `[result: ${outputPreview}]`
+      }
+      // Handle regular message content
+      else if (typeof msg.content === 'string') {
         content = msg.content
       } else if (Array.isArray(msg.content)) {
         const parts: string[] = []
         for (const block of msg.content) {
-          if (block.type === 'text' && block.text) parts.push(block.text)
-          else if (block.type === 'tool_use') parts.push(`[tool: ${block.name}]`)
+          if ((block.type === 'text' || block.type === 'input_text' || block.type === 'output_text') && block.text) {
+            parts.push(block.text)
+          } else if (block.type === 'tool_use') parts.push(`[tool: ${block.name}]`)
           else if (block.type === 'tool_result') {
             const resultContent = verboseMode ? String(block.content || '') : truncate(String(block.content || ''), 50)
             parts.push(`[result: ${resultContent}]`)
-          } else if (block.type === 'image' || block.type === 'image_url') parts.push('[image]')
+          } else if (block.type === 'image' || block.type === 'image_url' || block.type === 'input_image') parts.push('[image]')
           else parts.push(`[${block.type || '?'}]`)
         }
         content = parts.join(' ')
@@ -135,4 +150,25 @@ export function logError(message: string) {
   log()
   log(`  ${chalk.red('⏺')} ${chalk.red('Error')}: ${message}`)
   log()
+}
+
+export function logHeaders(label: string, headers: Record<string, string>) {
+  if (!verboseMode) return
+  log()
+  log(`  ${chalk.cyan('⏺')} ${chalk.cyan(label)}`)
+  for (const [key, value] of Object.entries(headers)) {
+    const displayValue = key.toLowerCase().includes('auth') ? truncate(value, 20) : value
+    log(`    ${chalk.dim(key)}: ${chalk.dim(displayValue)}`)
+  }
+}
+
+export function logStreamChunk(chunk: string) {
+  if (!verboseMode) return
+  log(`  ${chalk.gray('⏺')} ${chalk.gray('Stream chunk')} ${chalk.dim(`(${chunk.length} bytes)`)}`)
+  for (const line of chunk.split('\n').slice(0, 5)) {
+    if (line) log(`    ${chalk.dim(truncate(line, 100))}`)
+  }
+  if (chunk.split('\n').length > 5) {
+    log(`    ${chalk.dim('...')}`)
+  }
 }

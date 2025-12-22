@@ -11,6 +11,7 @@
     "dev": "tsx src/cli.ts --verbose",
     "dev:server": "tsx watch src/server.ts",
     "dev:mcp": "tsx src/mcp.ts",
+    "dev:tmux": "tmux attach -t sub-bridge || tmux new -s sub-bridge \"set -a; source ./.env; set +a; npm run dev:server\"",
     "start": "node dist/cli.js",
     "start:server": "tsx src/server.ts",
     "start:mcp": "tsx src/mcp.ts",

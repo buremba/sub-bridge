@@ -12,7 +12,7 @@ import {
   isCursorKeyCheck,
   createCursorBypassResponse,
 } from '../utils/cursor-byok-bypass'
-import { logRequest, logResponse, logError } from '../utils/logger'
+import { logRequest, logResponse, logError, isVerbose, logHeaders, logStreamChunk } from '../utils/logger'
 import { getChatGptInstructions } from '../utils/chatgpt-instructions'
 import { convertToResponsesFormat } from '../utils/chat-to-responses'
 
@@ -198,11 +198,32 @@ function convertMessages(messages: any[]): any[] {
     if (!msg.role) continue
 
     if (msg.role === 'assistant' && msg.tool_calls?.length) {
-      const content: any[] = msg.content ? [{ type: 'text', text: msg.content }] : []
+      let content: any[] = []
+      if (msg.content) {
+        if (typeof msg.content === 'string') {
+          content = [{ type: 'text', text: msg.content }]
+        } else if (Array.isArray(msg.content)) {
+          // Preserve existing content blocks, converting to Claude format
+          for (const block of msg.content) {
+            if (block.type === 'text' && typeof block.text === 'string') {
+              content.push({ type: 'text', text: block.text })
+            } else if (block.type === 'tool_use') {
+              content.push(block) // Already Claude format
+            }
+          }
+        }
+      }
       for (const tc of msg.tool_calls) {
+        let input = tc.function?.arguments || tc.arguments || {}
+        if (typeof input === 'string') {
+          try {
+            input = JSON.parse(input || '{}')
+          } catch {
+            input = { raw: input }
+          }
+        }
         content.push({
-          type: 'tool_use', id: tc.id, name: tc.function?.name || tc.name,
-          input: typeof tc.function?.arguments === 'string' ? JSON.parse(tc.function.arguments || '{}') : (tc.function?.arguments || tc.arguments || {})
+          type: 'tool_use', id: tc.id, name: tc.function?.name || tc.name, input
         })
       }
       converted.push({ role: 'assistant', content })
@@ -214,6 +235,20 @@ function convertMessages(messages: any[]): any[] {
       const last = converted[converted.length - 1]
       if (last?.role === 'user' && Array.isArray(last.content) && last.content[0]?.type === 'tool_result') last.content.push(toolResult)
       else converted.push({ role: 'user', content: [toolResult] })
+      continue
+    }
+
+    // Handle assistant messages with array content (no tool_calls)
+    if (msg.role === 'assistant' && Array.isArray(msg.content)) {
+      const content: any[] = []
+      for (const block of msg.content) {
+        if (block.type === 'text' && typeof block.text === 'string') {
+          content.push({ type: 'text', text: block.text })
+        } else if (block.type === 'tool_use') {
+          content.push(block)
+        }
+      }
+      converted.push({ role: 'assistant', content: content.length > 0 ? content : '' })
       continue
     }
 
@@ -231,35 +266,6 @@ function convertMessages(messages: any[]): any[] {
   }
 
   return converted
-}
-
-function toResponseContentItems(content: any, role: string): any[] {
-  const items: any[] = []
-  const textType = role === 'assistant' ? 'output_text' : 'input_text'
-
-  if (typeof content === 'string') {
-    if (content.trim()) items.push({ type: textType, text: content })
-    return items
-  }
-
-  if (Array.isArray(content)) {
-    for (const block of content) {
-      if (!block) continue
-      // Handle both 'text' (OpenAI format) and 'input_text'/'output_text' (Responses API format)
-      if ((block.type === 'text' || block.type === 'input_text' || block.type === 'output_text') && typeof block.text === 'string') {
-        items.push({ type: textType, text: block.text })
-      } else if (block.type === 'image_url') {
-        const url = typeof block.image_url === 'string' ? block.image_url : block.image_url?.url
-        if (typeof url === 'string' && url) items.push({ type: 'input_image', image_url: url })
-      }
-    }
-    return items
-  }
-
-  if (content !== null && content !== undefined) {
-    items.push({ type: textType, text: JSON.stringify(content) })
-  }
-  return items
 }
 
 function buildChatGptResponsesBody(body: any, requestedModel: string, isStreaming: boolean) {
@@ -306,6 +312,7 @@ function createChatGptStreamState(model: string) {
     sawTextDelta: false,
     toolCallsSeen: false,
     toolCallIndex: 0,
+    processedItemIds: new Set<string>(),  // Track processed item IDs to prevent duplicates
   }
 }
 
@@ -335,58 +342,6 @@ function mapUsage(usage: any) {
     prompt_tokens: prompt,
     completion_tokens: completion,
     total_tokens: total,
-  }
-}
-
-function convertResponsesToChatCompletion(responseData: any, requestedModel: string) {
-  const output = responseData?.output || responseData?.response?.output || []
-  const model = responseData?.model || requestedModel
-  const responseId = responseData?.id || responseData?.response?.id || `resp_${Date.now()}`
-
-  let content = ''
-  const toolCalls: any[] = []
-
-  for (const item of output) {
-    if (item?.type === 'message' && item.role === 'assistant') {
-      const blocks = Array.isArray(item.content) ? item.content : []
-      for (const block of blocks) {
-        if (block?.type === 'output_text' && typeof block.text === 'string') {
-          content += block.text
-        }
-      }
-    } else if (item?.type === 'function_call') {
-      toolCalls.push({
-        id: item.call_id || item.id || `call_${toolCalls.length}`,
-        type: 'function',
-        function: {
-          name: item.name || 'unknown',
-          arguments: item.arguments || '',
-        },
-      })
-    }
-  }
-
-  return {
-    id: `chatcmpl-${responseId.toString().replace(/^resp_/, '')}`,
-    object: 'chat.completion',
-    created: Math.floor(Date.now() / 1000),
-    model,
-    choices: [
-      {
-        index: 0,
-        message: {
-          role: 'assistant',
-          content: content || null,
-          tool_calls: toolCalls,
-        },
-        finish_reason: toolCalls.length > 0 ? 'tool_calls' : 'stop',
-      },
-    ],
-    usage: mapUsage(responseData?.usage || responseData?.response?.usage) || {
-      prompt_tokens: 0,
-      completion_tokens: 0,
-      total_tokens: 0,
-    },
   }
 }
 
@@ -425,6 +380,14 @@ function processChatGptChunk(state: ReturnType<typeof createChatGptStreamState>,
       }
       if (kind === 'response.output_item.done' && payload.item) {
         const item = payload.item
+
+        // Generate item identifier and skip if already processed
+        const itemId = item.id || item.call_id || `${item.type}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+        if (state.processedItemIds.has(itemId)) {
+          continue  // Already processed this item, skip to prevent duplicates
+        }
+        state.processedItemIds.add(itemId)
+
         if (item.type === 'message' && item.role === 'assistant' && !state.sawTextDelta) {
           const blocks = Array.isArray(item.content) ? item.content : []
           const text = blocks
@@ -441,11 +404,13 @@ function processChatGptChunk(state: ReturnType<typeof createChatGptStreamState>,
           }
         } else if (item.type === 'function_call') {
           state.toolCallsSeen = true
+          const toolCallId = item.call_id || item.id || `call_${state.toolCallIndex}`
+
           const delta: any = {
             tool_calls: [
               {
                 index: state.toolCallIndex++,
-                id: item.call_id || item.id || `call_${state.toolCallIndex}`,
+                id: toolCallId,
                 type: 'function',
                 function: {
                   name: item.name || 'unknown',
@@ -527,11 +492,7 @@ async function handleChatGptProxy(
   isStreaming: boolean,
 ) {
   const chatgptModel = normalizeChatGptModel(requestedModel)
-  // DEBUG: Log full body
-  console.error('DEBUG full body:', JSON.stringify(body, null, 2).slice(0, 3000))
   const responseBody = buildChatGptResponsesBody(body, chatgptModel, isStreaming)
-  // DEBUG: Log actual input being sent
-  console.error('DEBUG input:', JSON.stringify(responseBody.input, null, 2))
   logRequest('chatgpt', `${requestedModel} → ${chatgptModel}`, {
     system: responseBody.instructions,
     messages: responseBody.input,
@@ -550,6 +511,16 @@ async function handleChatGptProxy(
 
   const baseUrl = CHATGPT_BASE_URL.replace(/\/$/, '')
 
+  if (isVerbose()) {
+    logHeaders('Request Headers', {
+      'content-type': 'application/json',
+      'authorization': `Bearer ${tokenInfo.token}`,
+      'chatgpt-account-id': tokenInfo.accountId || '',
+      'originator': 'codex_cli_rs',
+      'accept': 'text/event-stream',
+    })
+  }
+
   const response = await fetch(`${baseUrl}/responses`, {
     method: 'POST',
     headers: {
@@ -567,13 +538,46 @@ async function handleChatGptProxy(
     logError(errorText.slice(0, 200))
     try {
       const parsed = JSON.parse(errorText)
-      return c.json(parsed, response.status as any)
+      const errorMessage = parsed.error?.message || parsed.message || 'Unknown error'
+      const errorType = parsed.error?.type || parsed.type || 'api_error'
+
+      // Map error types to user-friendly messages
+      let userMessage = errorMessage
+      if (response.status === 401 || errorType === 'authentication_error') {
+        userMessage = `ChatGPT authentication failed: ${errorMessage}. Try re-logging in.`
+      } else if (response.status === 429 || errorType === 'rate_limit_error') {
+        userMessage = `ChatGPT rate limit exceeded: ${errorMessage}`
+      } else if (response.status === 400 || errorType === 'invalid_request_error') {
+        userMessage = `Invalid request to ChatGPT: ${errorMessage}`
+      }
+
+      return c.json({
+        error: {
+          message: userMessage,
+          type: errorType,
+          code: errorType,
+        }
+      }, response.status as any)
     } catch {
-      return new Response(errorText, { status: response.status })
+      return c.json({
+        error: {
+          message: `ChatGPT error: ${errorText.slice(0, 200)}`,
+          type: 'api_error',
+          code: 'api_error',
+        }
+      }, response.status as any)
     }
   }
 
   logResponse(response.status)
+
+  if (isVerbose()) {
+    const respHeaders: Record<string, string> = {}
+    response.headers.forEach((value, key) => {
+      respHeaders[key] = value
+    })
+    logHeaders('Response Headers', respHeaders)
+  }
 
   const reader = response.body!.getReader()
   const decoder = new TextDecoder()
@@ -585,6 +589,9 @@ async function handleChatGptProxy(
         const { done, value } = await reader.read()
         if (done) break
         const chunk = decoder.decode(value, { stream: true })
+        if (isVerbose()) {
+          logStreamChunk(chunk)
+        }
         const results = processChatGptChunk(state, chunk)
         for (const result of results) {
           if (result.type === 'chunk') {
@@ -600,24 +607,52 @@ async function handleChatGptProxy(
 
   // Non-streaming: aggregate the stream into a final response
   let fullContent = ''
-  const toolCalls: any[] = []
+  const toolCallsMap = new Map<string, any>()  // Use Map for deduplication by ID
   let usage: any = null
 
   while (true) {
     const { done, value } = await reader.read()
     if (done) break
     const chunk = decoder.decode(value, { stream: true })
+    if (isVerbose()) {
+      logStreamChunk(chunk)
+    }
     const results = processChatGptChunk(state, chunk)
     for (const result of results) {
       if (result.type === 'chunk' && result.data?.choices?.[0]?.delta) {
         const delta = result.data.choices[0].delta
         if (delta.content) fullContent += delta.content
-        if (delta.tool_calls) toolCalls.push(...delta.tool_calls)
+
+        // Aggregate tool calls - merge by index, deduplicate by ID
+        if (delta.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            if (tc.id) {
+              // New tool call with ID - store by ID
+              if (!toolCallsMap.has(tc.id)) {
+                toolCallsMap.set(tc.id, { ...tc })
+              }
+            } else if (tc.index !== undefined) {
+              // Continuation chunk (has index but no id) - find and merge arguments
+              // Find existing tool call by index
+              for (const [id, existing] of toolCallsMap) {
+                if (existing.index === tc.index && tc.function?.arguments) {
+                  existing.function = existing.function || {}
+                  existing.function.arguments = (existing.function.arguments || '') + tc.function.arguments
+                  break
+                }
+              }
+            }
+          }
+        }
+
         if (result.data.usage) usage = result.data.usage
       }
     }
   }
   reader.releaseLock()
+
+  // Convert Map to array
+  const toolCalls = Array.from(toolCallsMap.values())
 
   return c.json({
     id: state.id,

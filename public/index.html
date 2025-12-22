@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sub Bridge | Use ChatGPT and Claude subscriptions in Cursor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --bg-soft: #101215;
+      --card: #15181c;
+      --border: #23262d;
+      --text: #f5f5f5;
+      --muted: #a3a9b4;
+      --accent: #f7b24d;
+      --accent-strong: #ff9f1c;
+      --accent-2: #23c8b7;
+      --accent-2-soft: rgba(35, 200, 183, 0.12);
+      --glow: rgba(247, 178, 77, 0.22);
+      --shadow: 0 18px 40px rgba(0, 0, 0, 0.35);
+      --radius-lg: 22px;
+      --radius-md: 16px;
+      --radius-sm: 12px;
+      --max-w: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      font-family: "DM Sans", "Segoe UI", sans-serif;
+      color: var(--text);
+      background: radial-gradient(1200px 520px at 5% -5%, rgba(247, 178, 77, 0.25), transparent 60%),
+                  radial-gradient(900px 520px at 98% 0%, rgba(35, 200, 183, 0.2), transparent 62%),
+                  radial-gradient(700px 420px at 70% 90%, rgba(247, 178, 77, 0.16), transparent 62%),
+                  var(--bg);
+      min-height: 100vh;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    img { max-width: 100%; display: block; }
+
+    .container {
+      width: min(100% - 48px, var(--max-w));
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 12px;
+      gap: 16px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Space Grotesk", sans-serif;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+    }
+
+    .brand-mark {
+      height: 34px;
+      width: 34px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #ff6f3c);
+      display: grid;
+      place-items: center;
+      color: #111;
+      font-weight: 700;
+      box-shadow: 0 10px 30px rgba(255, 111, 60, 0.35);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 22px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      font-weight: 600;
+      font-size: 15px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: #1a1a1a;
+      box-shadow: 0 18px 32px var(--glow);
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); }
+
+    .btn-outline {
+      border-color: var(--border);
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 40px;
+      padding: 36px 0 56px;
+      align-items: center;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      font-family: "Space Grotesk", sans-serif;
+      margin: 0;
+      line-height: 1.05;
+    }
+
+    h1 {
+      font-size: clamp(36px, 4.4vw, 56px);
+      margin-top: 18px;
+    }
+
+    p { margin: 0; line-height: 1.6; color: var(--muted); }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 26px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+
+    .badge {
+      padding: 8px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .hero-card {
+      background: linear-gradient(180deg, rgba(21, 24, 28, 0.9), rgba(13, 15, 18, 0.95));
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      padding: 26px;
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card h3 { font-size: 22px; margin-bottom: 12px; }
+
+    .hero-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 18px 0 0;
+      display: grid;
+      gap: 10px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .hero-card li { display: flex; gap: 10px; }
+
+    .dot {
+      height: 8px;
+      width: 8px;
+      margin-top: 6px;
+      border-radius: 999px;
+      background: var(--accent-2);
+      box-shadow: 0 0 0 4px var(--accent-2-soft);
+      flex: 0 0 8px;
+    }
+
+    .section {
+      padding: 70px 0 20px;
+    }
+
+    .section-head {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 720px;
+    }
+
+    .value-grid {
+      margin-top: 28px;
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .card {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      padding: 20px;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card h3 { font-size: 20px; }
+
+    .callout {
+      margin-top: 22px;
+      padding: 16px 20px;
+      border-radius: var(--radius-md);
+      background: rgba(35, 200, 183, 0.12);
+      border: 1px solid rgba(35, 200, 183, 0.3);
+      color: #d4fffa;
+      font-size: 14px;
+    }
+
+    .tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 22px;
+    }
+
+    .tab {
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--muted);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .tab.active {
+      color: #111;
+      background: var(--accent);
+      border-color: transparent;
+    }
+
+    .case-panel {
+      margin-top: 18px;
+      padding: 22px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(15, 17, 20, 0.85);
+      display: grid;
+      gap: 16px;
+    }
+
+    .case-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .case-box {
+      padding: 16px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .steps {
+      margin-top: 26px;
+      display: grid;
+      gap: 18px;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: 44px 1fr;
+      gap: 16px;
+      padding: 18px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(15, 17, 20, 0.8);
+    }
+
+    .step-num {
+      height: 36px;
+      width: 36px;
+      border-radius: 12px;
+      background: rgba(247, 178, 77, 0.2);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      font-family: "Space Grotesk", sans-serif;
+    }
+
+    .step h3 { font-size: 18px; }
+
+    .step p { color: var(--muted); font-size: 14px; }
+
+    .inline-code {
+      font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #fff;
+    }
+
+    .screenshot {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 20px;
+      margin-top: 28px;
+      align-items: center;
+    }
+
+    .screenshot figure {
+      margin: 0;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      background: var(--bg-soft);
+    }
+
+    .screenshot figcaption {
+      padding: 12px 16px;
+      font-size: 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    .diagram {
+      margin-top: 30px;
+      padding: 28px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: rgba(15, 17, 20, 0.85);
+    }
+
+    .diagram-flow {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      align-items: center;
+    }
+
+    .diagram-node {
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      text-align: center;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .diagram-arrow {
+      text-align: center;
+      color: var(--accent);
+      font-size: 22px;
+      display: none;
+    }
+
+    .diagram-flow > .diagram-arrow { display: block; }
+
+    .faq {
+      margin-top: 26px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .faq-item {
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: rgba(15, 17, 20, 0.8);
+    }
+
+    .faq-question {
+      width: 100%;
+      text-align: left;
+      padding: 16px 18px;
+      font-size: 15px;
+      color: var(--text);
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .faq-answer {
+      padding: 0 18px 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    .cta {
+      margin: 60px 0 80px;
+      padding: 30px;
+      border-radius: var(--radius-lg);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: linear-gradient(140deg, rgba(247, 178, 77, 0.18), rgba(35, 200, 183, 0.12));
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .cta h2 { font-size: clamp(26px, 3vw, 34px); }
+
+    .footer {
+      padding-bottom: 50px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    [x-cloak] { display: none !important; }
+
+    @media (max-width: 900px) {
+      .nav-links { display: none; }
+      .diagram-flow { grid-template-columns: 1fr; }
+      .diagram-arrow { display: none; }
+    }
+
+    @media (min-width: 900px) {
+      .diagram-flow { grid-template-columns: 1fr 60px 1fr 60px 1fr 60px 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="container nav">
+    <div class="brand">
+      <div class="brand-mark">SB</div>
+      <span>Sub Bridge</span>
+    </div>
+    <nav class="nav-links">
+      <a href="#value">Value</a>
+      <a href="#use-cases">Use cases</a>
+      <a href="#steps">Steps</a>
+      <a href="#how">How it works</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <a class="btn btn-outline" href="#install">Install</a>
+  </header>
+
+  <main class="container" x-data="landing()">
+    <section class="hero" id="install">
+      <div>
+        <span class="eyebrow">Subscriptions in Cursor</span>
+        <h1>Use ChatGPT and Claude subscriptions inside Cursor without paying Cursor token pricing.</h1>
+        <p>
+          Sub Bridge is a local MCP server that routes Cursor requests through your ChatGPT or Claude subscription.
+          You keep Cursor features (except autocomplete without a Cursor plan), avoid API token burn, and still get
+          3x to 5x more token value based on heavy usage comparisons.
+        </p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="cursor://anysphere.cursor-deeplink/mcp/install?name=sub-bridge&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJzdWItYnJpZGdlIl19">
+            Install with Cursor
+          </a>
+          <a class="btn btn-outline" href="#how">See how it works</a>
+        </div>
+        <div class="badge-row">
+          <span class="badge">5-hour subscription windows apply</span>
+          <span class="badge">10x cheaper than API tokens</span>
+          <span class="badge">Runs locally on your machine</span>
+        </div>
+        <p style="margin-top: 14px; font-size: 13px;">
+          If the button does not open Cursor, add an MCP server with <span class="inline-code">npx -y sub-bridge</span>.
+        </p>
+      </div>
+      <div class="hero-card">
+        <h3>Why it beats Cursor pricing</h3>
+        <ul>
+          <li><span class="dot"></span>Cursor usage-based pricing gives 2x credits, but Pro and Ultra are still 3x to 5x more expensive than a subscription.</li>
+          <li><span class="dot"></span>Subscriptions are rate-limited in 5-hour windows, yet deliver far more tokens per dollar.</li>
+          <li><span class="dot"></span>Use the same Cursor UX while spending on a single ChatGPT or Claude plan.</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="value">
+      <div class="section-head">
+        <h2>Know if it is worth it for your setup</h2>
+        <p>
+          Sub Bridge is built for people who already pay for ChatGPT or Claude and want to reuse that spend in Cursor.
+          Based on our own usage data (Claude Code 20x plan vs Cursor Pro token usage), subscriptions deliver 3x to 5x more
+          tokens than Cursor pricing. Your mileage may vary.
+        </p>
+      </div>
+      <div class="value-grid">
+        <div class="card">
+          <h3>Subscription tokens</h3>
+          <p>Use ChatGPT Pro, ChatGPT Max, Claude Pro, or Claude Max 20x tokens inside Cursor.</p>
+        </div>
+        <div class="card">
+          <h3>API token savings</h3>
+          <p>Subscription tokens are roughly 10x cheaper than API tokens, even with 5-hour windows.</p>
+        </div>
+        <div class="card">
+          <h3>Cursor plan optional</h3>
+          <p>No Cursor plan required for chat, tools, or agents. Autocomplete still needs a Cursor plan.</p>
+        </div>
+      </div>
+      <div class="callout">
+        Quick rule: If you already pay for ChatGPT or Claude, add Sub Bridge to stop paying Cursor token pricing.
+      </div>
+    </section>
+
+    <section class="section" id="use-cases">
+      <div class="section-head">
+        <h2>Pick your case and see the value</h2>
+        <p>Choose the setup closest to you. Sub Bridge stacks on top of existing subscriptions instead of replacing them.</p>
+      </div>
+      <div class="tabs">
+        <button class="tab" :class="activeCase === 'no-cursor' ? 'active' : ''" @click="activeCase = 'no-cursor'">No Cursor plan</button>
+        <button class="tab" :class="activeCase === 'cursor-pro' ? 'active' : ''" @click="activeCase = 'cursor-pro'">Cursor Pro</button>
+        <button class="tab" :class="activeCase === 'max' ? 'active' : ''" @click="activeCase = 'max'">ChatGPT Max or Claude Max 20x</button>
+      </div>
+
+      <div class="case-panel" x-show="activeCase === 'no-cursor'" x-cloak>
+        <strong>No Cursor plan + ChatGPT or Claude</strong>
+        <p>Use Cursor chat, agents, and tools with your subscription tokens. Autocomplete stays locked without a Cursor plan.</p>
+        <div class="case-grid">
+          <div class="case-box">
+            <h3>What you pay</h3>
+            <p>Only your ChatGPT or Claude subscription.</p>
+          </div>
+          <div class="case-box">
+            <h3>What you unlock</h3>
+            <p>Pro-plus level token capacity in Cursor without extra Cursor spend.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="case-panel" x-show="activeCase === 'cursor-pro'" x-cloak>
+        <strong>Cursor Pro + ChatGPT or Claude</strong>
+        <p>Keep Cursor Pro for autocomplete and add subscription tokens as a second lane for heavy sessions.</p>
+        <div class="case-grid">
+          <div class="case-box">
+            <h3>What you pay</h3>
+            <p>Cursor Pro plus your existing subscription.</p>
+          </div>
+          <div class="case-box">
+            <h3>What you unlock</h3>
+            <p>Free extra token capacity, so your Cursor credits last longer.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="case-panel" x-show="activeCase === 'max'" x-cloak>
+        <strong>ChatGPT Max or Claude Max 20x</strong>
+        <p>Max plans are the best value for high-volume coding sessions. Sub Bridge lets you push those limits inside Cursor.</p>
+        <div class="case-grid">
+          <div class="case-box">
+            <h3>What you pay</h3>
+            <p>Your Max or 20x plan, no extra Cursor token pricing.</p>
+          </div>
+          <div class="case-box">
+            <h3>What you unlock</h3>
+            <p>Roughly 3x to 5x token value in Cursor based on real usage comparisons.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="steps">
+      <div class="section-head">
+        <h2>Setup in minutes</h2>
+        <p>Install once, connect your subscription, and point Cursor at your local MCP proxy.</p>
+      </div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Install the MCP server in Cursor</h3>
+            <p>Click the install button or add a new MCP server with <span class="inline-code">npx -y sub-bridge</span>.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Ask Cursor to connect</h3>
+            <p>In Cursor chat, run <span class="inline-code">get_connection</span>. It returns a local URL and login links for ChatGPT or Claude.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div>
+            <h3>Log in to your subscription</h3>
+            <p>Open the local URL, sign in with ChatGPT or Claude, and grant access. Tokens stay on your machine.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div>
+            <h3>Paste the URL and token into Cursor</h3>
+            <p>Cursor Settings -> Models -> API Keys. Set Base URL to <span class="inline-code">https://your-public-url/v1</span> and API key to your OAuth token.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div>
+            <h3>Use your models</h3>
+            <p>Select the model in Cursor and start coding. Autocomplete still requires a Cursor plan.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="screenshot">
+        <div>
+          <h3>What you see in the local UI</h3>
+          <p>The local page shows your public URL, login buttons, and the API key you paste into Cursor models settings.</p>
+          <p style="margin-top: 12px;">Drop your screenshot in <span class="inline-code">public/assets/sub-bridge-ui.png</span>.</p>
+        </div>
+        <figure>
+          <img src="assets/sub-bridge-ui.png" alt="Sub Bridge local setup UI screenshot" loading="lazy">
+          <figcaption>Local UI for login, URL, and API key setup.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="how">
+      <div class="section-head">
+        <h2>How it works</h2>
+        <p>Sub Bridge runs a local MCP server, opens a tunnel for Cursor, and proxies requests to your subscription provider.</p>
+      </div>
+      <div class="diagram">
+        <div class="diagram-flow">
+          <div class="diagram-node">Cursor (chat, agents)</div>
+          <div class="diagram-arrow">&#8594;</div>
+          <div class="diagram-node">Public URL (tunnel)</div>
+          <div class="diagram-arrow">&#8594;</div>
+          <div class="diagram-node">Local MCP server</div>
+          <div class="diagram-arrow">&#8594;</div>
+          <div class="diagram-node">ChatGPT / Claude subscription</div>
+        </div>
+        <div style="margin-top: 18px; color: var(--muted); font-size: 14px;">
+          Your OAuth token stays local. The tunnel only forwards requests to your machine so Cursor can reach the MCP server.
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq">
+      <div class="section-head">
+        <h2>FAQ</h2>
+        <p>Everything runs locally. No extra servers, no hidden fees, and you can revoke access anytime.</p>
+      </div>
+      <div class="faq">
+        <div class="faq-item" x-data="{ open: false }">
+          <button class="faq-question" @click="open = !open" :aria-expanded="open">
+            Does everything stay local?
+            <span x-text="open ? '-' : '+'"></span>
+          </button>
+          <div class="faq-answer" x-show="open" x-transition x-cloak>
+            Yes. Sub Bridge runs on your machine. Tokens are stored in your browser local storage, not on a remote server.
+          </div>
+        </div>
+        <div class="faq-item" x-data="{ open: false }">
+          <button class="faq-question" @click="open = !open" :aria-expanded="open">
+            Why do I need a public URL?
+            <span x-text="open ? '-' : '+'"></span>
+          </button>
+          <div class="faq-answer" x-show="open" x-transition x-cloak>
+            Cursor needs a reachable base URL. The MCP starts a tunnel that exposes your local server securely.
+          </div>
+        </div>
+        <div class="faq-item" x-data="{ open: false }">
+          <button class="faq-question" @click="open = !open" :aria-expanded="open">
+            Can I use this without a Cursor subscription?
+            <span x-text="open ? '-' : '+'"></span>
+          </button>
+          <div class="faq-answer" x-show="open" x-transition x-cloak>
+            Yes. You can use Cursor chat, tools, and agents. Autocomplete is the only feature that still requires a Cursor plan.
+          </div>
+        </div>
+        <div class="faq-item" x-data="{ open: false }">
+          <button class="faq-question" @click="open = !open" :aria-expanded="open">
+            What about rate limits?
+            <span x-text="open ? '-' : '+'"></span>
+          </button>
+          <div class="faq-answer" x-show="open" x-transition x-cloak>
+            ChatGPT and Claude subscriptions use 5-hour window rate limits. You still get more tokens per dollar than API pricing.
+          </div>
+        </div>
+        <div class="faq-item" x-data="{ open: false }">
+          <button class="faq-question" @click="open = !open" :aria-expanded="open">
+            Is this compliant and safe?
+            <span x-text="open ? '-' : '+'"></span>
+          </button>
+          <div class="faq-answer" x-show="open" x-transition x-cloak>
+            The proxy runs locally, and you control the tunnel. There is no data collection and no external server storing tokens.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <div>
+        <h2>Stop paying Cursor token pricing. Use your subscription instead.</h2>
+        <p>Install Sub Bridge in Cursor and connect ChatGPT or Claude in minutes.</p>
+      </div>
+      <a class="btn btn-primary" href="cursor://anysphere.cursor-deeplink/mcp/install?name=sub-bridge&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJzdWItYnJpZGdlIl19">
+        Install with Cursor
+      </a>
+    </section>
+  </main>
+
+  <footer class="container footer">
+    <span>Sub Bridge MCP. Local-first. Subscription-powered.</span>
+    <span>Not affiliated with OpenAI, Anthropic, or Cursor.</span>
+  </footer>
+
+  <script>
+    function landing() {
+      return {
+        activeCase: 'no-cursor'
+      };
+    }
+  </script>
+</body>
+</html>

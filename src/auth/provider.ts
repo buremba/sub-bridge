@@ -19,6 +19,7 @@ export interface TokenResult {
   refreshToken?: string
   expiresIn?: number
   accountId?: string
+  email?: string
 }
 
 export interface AuthProvider {
@@ -90,12 +91,21 @@ export class ClaudeProvider implements AuthProvider {
       access_token: string
       refresh_token: string
       expires_in: number
+      account?: {
+        uuid: string
+        email_address: string
+      }
+      organization?: {
+        uuid: string
+        name: string
+      }
     }
 
     return {
       accessToken: data.access_token,
       refreshToken: data.refresh_token,
       expiresIn: data.expires_in,
+      email: data.account?.email_address,
     }
   }
 }
@@ -146,6 +156,15 @@ function extractChatGptAccountId(idToken: string | undefined, accessToken?: stri
     const nested = (authClaim as Record<string, unknown> | undefined)?.chatgpt_account_id
     if (typeof nested === 'string' && nested.trim()) return nested
   }
+  return undefined
+}
+
+function extractEmailFromIdToken(idToken: string | undefined): string | undefined {
+  if (!idToken) return undefined
+  const payload = parseJwtPayload(idToken)
+  if (!payload) return undefined
+  const email = payload?.email
+  if (typeof email === 'string' && email.trim()) return email
   return undefined
 }
 
@@ -339,6 +358,7 @@ export class OpenAIProvider implements AuthProvider {
     }
 
     const accountId = extractChatGptAccountId(tokenData.id_token, tokenData.access_token)
+    const email = extractEmailFromIdToken(tokenData.id_token)
 
     // Clean up session
     deviceSessions.delete(sessionId)
@@ -348,6 +368,7 @@ export class OpenAIProvider implements AuthProvider {
       refreshToken: tokenData.refresh_token,
       expiresIn: tokenData.expires_in,
       accountId,
+      email,
     }
   }
 

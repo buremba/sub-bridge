@@ -69,6 +69,18 @@
           <div class="flex items-center gap-2 shrink-0">
             <span class="h-2 w-2 rounded-full" :class="claude.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="claude.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="claude.connected ? 'Connected' : 'Not connected'"></span>
+            <!-- Account Switcher (show when multiple accounts) -->
+            <template x-if="Object.keys(claude.accounts).length > 1">
+              <select
+                x-model="claude.activeAccount"
+                @change="localStorage.setItem('claude_active_account', claude.activeAccount)"
+                class="ml-2 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200 focus:border-neutral-600 focus:outline-none"
+              >
+                <template x-for="email in Object.keys(claude.accounts)" :key="email">
+                  <option :value="email" x-text="claude.accounts[email].displayName || email"></option>
+                </template>
+              </select>
+            </template>
             <template x-if="claude.connected">
               <button
                 @click="disconnectClaude()"
@@ -114,6 +126,18 @@
           <div class="flex items-center gap-2 shrink-0">
             <span class="h-2 w-2 rounded-full" :class="chatgpt.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="chatgpt.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="chatgpt.connected ? 'Connected' : 'Not connected'"></span>
+            <!-- Account Switcher (show when multiple accounts) -->
+            <template x-if="Object.keys(chatgpt.accounts).length > 1">
+              <select
+                x-model="chatgpt.activeAccount"
+                @change="localStorage.setItem('chatgpt_active_account', chatgpt.activeAccount)"
+                class="ml-2 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200 focus:border-neutral-600 focus:outline-none"
+              >
+                <template x-for="accountId in Object.keys(chatgpt.accounts)" :key="accountId">
+                  <option :value="accountId" x-text="chatgpt.accounts[accountId].displayName || accountId"></option>
+                </template>
+              </select>
+            </template>
             <template x-if="chatgpt.connected">
               <button
                 @click="disconnectChatGPT()"
@@ -166,7 +190,32 @@
               <label class="text-xs text-neutral-500 shrink-0 w-28 text-right">OpenAI Base URL</label>
             </div>
               <div class="flex items-center gap-3 p-4 pb-0 pt-0" x-if="claude.connected">
-                <div class="flex flex-col gap-2">
+                <div class="flex flex-col gap-2 w-full">
+                  <!-- Account Selector (show when both providers connected) -->
+                  <div x-show="claude.connected && chatgpt.connected" class="flex items-center gap-2 pb-2 border-b border-neutral-800">
+                    <label class="text-xs text-neutral-400 shrink-0">Active Provider:</label>
+                    <select
+                      x-model="activeProvider"
+                      @change="localStorage.setItem('active_provider', activeProvider)"
+                      x-init="activeProvider = localStorage.getItem('active_provider') || 'claude'"
+                      class="flex-1 rounded-lg border border-neutral-700 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-100 focus:border-neutral-600 focus:outline-none"
+                    >
+                      <template x-if="Object.keys(claude.accounts).length > 0">
+                        <optgroup label="Claude">
+                          <template x-for="email in Object.keys(claude.accounts)" :key="'claude-' + email">
+                            <option :value="'claude-' + email" x-text="'Claude: ' + (claude.accounts[email].displayName || email)"></option>
+                          </template>
+                        </optgroup>
+                      </template>
+                      <template x-if="Object.keys(chatgpt.accounts).length > 0">
+                        <optgroup label="ChatGPT">
+                          <template x-for="accountId in Object.keys(chatgpt.accounts)" :key="'chatgpt-' + accountId">
+                            <option :value="'chatgpt-' + accountId" x-text="'ChatGPT: ' + (chatgpt.accounts[accountId].displayName || accountId)"></option>
+                          </template>
+                        </optgroup>
+                      </template>
+                    </select>
+                  </div>
                   <template x-for="(route, i) in routes" :key="i">
                     <div class="grid grid-cols-[1fr_auto_1fr_auto] items-center gap-2">
                       <input
@@ -384,23 +433,27 @@
       return {
         // Auth state
         claude: {
+          accounts: {},         // Map of email -> account data
+          activeAccount: null,  // Currently active email
           connected: false,
-          token: null,
           code: '',
           loading: false,
           error: null,
           showInput: false
         },
         chatgpt: {
+          accounts: {},         // Map of accountId -> account data
+          activeAccount: null,  // Currently active accountId
           connected: false,
-          token: null,
-          accountId: null,
           deviceId: '',
           sessionId: null,
           polling: false,
           error: null,
           showInput: false
         },
+
+        // Active provider (for multi-provider switching)
+        activeProvider: 'claude',
 
         // Routing state
         routes: [
@@ -448,23 +501,50 @@
         // Computed API key (format: o3=opus-4.5,o3-mini=sonnet-4.5:sk-ant-xxx sk-xxx)
         get apiKey() {
           const keys = [];
+          const bothConnected = this.claude.connected && this.chatgpt.connected;
 
-          // Add Claude token with mappings
-          if (this.claude.token) {
-            const mappings = this.routes
-              .filter(r => r.cursor && r.claude)
-              .map(r => `${r.cursor}=${r.claude}`)
-              .join(',');
-            const claudeKey = mappings ? `${mappings}:${this.claude.token}` : this.claude.token;
-            keys.push(claudeKey);
-          }
+          // When both providers are connected, use only the activeProvider selection
+          if (bothConnected && this.activeProvider) {
+            if (this.activeProvider.startsWith('claude-')) {
+              const email = this.activeProvider.substring(7); // Remove 'claude-' prefix
+              const claudeAccount = this.claude.accounts[email];
+              if (claudeAccount && claudeAccount.token) {
+                const mappings = this.routes
+                  .filter(r => r.cursor && r.claude)
+                  .map(r => `${r.cursor}=${r.claude}`)
+                  .join(',');
+                const claudeKey = mappings ? `${mappings}:${claudeAccount.token}` : claudeAccount.token;
+                keys.push(claudeKey);
+              }
+            } else if (this.activeProvider.startsWith('chatgpt-')) {
+              const accountId = this.activeProvider.substring(8); // Remove 'chatgpt-' prefix
+              const chatgptAccount = this.chatgpt.accounts[accountId];
+              if (chatgptAccount && chatgptAccount.token) {
+                const chatgptKey = chatgptAccount.accountId
+                  ? `${chatgptAccount.token}#${chatgptAccount.accountId}`
+                  : chatgptAccount.token;
+                keys.push(chatgptKey);
+              }
+            }
+          } else {
+            // When only one provider is connected, use their active account
+            const claudeAccount = this.claude.activeAccount ? this.claude.accounts[this.claude.activeAccount] : null;
+            if (claudeAccount && claudeAccount.token) {
+              const mappings = this.routes
+                .filter(r => r.cursor && r.claude)
+                .map(r => `${r.cursor}=${r.claude}`)
+                .join(',');
+              const claudeKey = mappings ? `${mappings}:${claudeAccount.token}` : claudeAccount.token;
+              keys.push(claudeKey);
+            }
 
-          // Add ChatGPT token (append account id for ChatGPT backend)
-          if (this.chatgpt.token) {
-            const chatgptKey = this.chatgpt.accountId
-              ? `${this.chatgpt.token}#${this.chatgpt.accountId}`
-              : this.chatgpt.token;
-            keys.push(chatgptKey);
+            const chatgptAccount = this.chatgpt.activeAccount ? this.chatgpt.accounts[this.chatgpt.activeAccount] : null;
+            if (chatgptAccount && chatgptAccount.token) {
+              const chatgptKey = chatgptAccount.accountId
+                ? `${chatgptAccount.token}#${chatgptAccount.accountId}`
+                : chatgptAccount.token;
+              keys.push(chatgptKey);
+            }
           }
 
           return keys.join(' ');
@@ -487,21 +567,42 @@
 
         // Initialize
         async init() {
-          // Restore tokens from localStorage
-          const savedClaudeToken = localStorage.getItem('claude_token');
-          if (savedClaudeToken) {
-            this.claude.token = savedClaudeToken;
+          // Migration: Clear old localStorage keys (require re-login)
+          if (localStorage.getItem('claude_token') || localStorage.getItem('chatgpt_token') || localStorage.getItem('chatgpt_account_id')) {
+            localStorage.removeItem('claude_token');
+            localStorage.removeItem('chatgpt_token');
+            localStorage.removeItem('chatgpt_account_id');
+            console.log('[Migration] Cleared old tokens - please re-login');
+          }
+
+          // Load Claude accounts from localStorage
+          const savedClaudeAccounts = localStorage.getItem('claude_accounts');
+          if (savedClaudeAccounts) {
+            try {
+              this.claude.accounts = JSON.parse(savedClaudeAccounts);
+            } catch (e) {
+              console.error('Failed to parse Claude accounts:', e);
+            }
+          }
+          const savedClaudeActive = localStorage.getItem('claude_active_account');
+          if (savedClaudeActive && this.claude.accounts[savedClaudeActive]) {
+            this.claude.activeAccount = savedClaudeActive;
             this.claude.connected = true;
           }
 
-          const savedChatGPTToken = localStorage.getItem('chatgpt_token');
-          if (savedChatGPTToken) {
-            this.chatgpt.token = savedChatGPTToken;
-            this.chatgpt.connected = true;
+          // Load ChatGPT accounts from localStorage
+          const savedChatGPTAccounts = localStorage.getItem('chatgpt_accounts');
+          if (savedChatGPTAccounts) {
+            try {
+              this.chatgpt.accounts = JSON.parse(savedChatGPTAccounts);
+            } catch (e) {
+              console.error('Failed to parse ChatGPT accounts:', e);
+            }
           }
-          const savedChatGPTAccountId = localStorage.getItem('chatgpt_account_id');
-          if (savedChatGPTAccountId) {
-            this.chatgpt.accountId = savedChatGPTAccountId;
+          const savedChatGPTActive = localStorage.getItem('chatgpt_active_account');
+          if (savedChatGPTActive && this.chatgpt.accounts[savedChatGPTActive]) {
+            this.chatgpt.activeAccount = savedChatGPTActive;
+            this.chatgpt.connected = true;
           }
 
           try {
@@ -536,12 +637,23 @@
             });
             const data = await res.json();
             if (data.success) {
+              const email = data.email || `account_${Date.now()}`;
+
+              // Store account
+              this.claude.accounts[email] = {
+                token: data.accessToken,
+                refreshToken: data.refreshToken,
+                email: email,
+                displayName: email
+              };
+              this.claude.activeAccount = email;
               this.claude.connected = true;
-              this.claude.token = data.accessToken;
               this.claude.code = '';
               this.claude.showInput = false;
-              // Save token to localStorage
-              localStorage.setItem('claude_token', data.accessToken);
+
+              // Save to localStorage
+              localStorage.setItem('claude_accounts', JSON.stringify(this.claude.accounts));
+              localStorage.setItem('claude_active_account', email);
             } else {
               this.claude.error = data.error;
             }
@@ -552,14 +664,34 @@
           }
         },
 
-        // Disconnect Claude and clear token
+        // Disconnect Claude and clear active account
         disconnectClaude() {
-          this.claude.connected = false;
-          this.claude.token = null;
+          if (this.claude.activeAccount) {
+            // Remove active account
+            delete this.claude.accounts[this.claude.activeAccount];
+            this.claude.activeAccount = null;
+
+            // If other accounts exist, switch to first one
+            const remainingAccounts = Object.keys(this.claude.accounts);
+            if (remainingAccounts.length > 0) {
+              this.claude.activeAccount = remainingAccounts[0];
+              this.claude.connected = true;
+            } else {
+              this.claude.connected = false;
+            }
+
+            // Update localStorage
+            localStorage.setItem('claude_accounts', JSON.stringify(this.claude.accounts));
+            if (this.claude.activeAccount) {
+              localStorage.setItem('claude_active_account', this.claude.activeAccount);
+            } else {
+              localStorage.removeItem('claude_active_account');
+            }
+          }
+
           this.claude.code = '';
           this.claude.showInput = false;
           this.claude.error = null;
-          localStorage.removeItem('claude_token');
         },
 
         // Start ChatGPT device flow
@@ -591,19 +723,31 @@
             });
             const data = await res.json();
             if (data.status === 'success') {
+              if (!data.accountId) {
+                this.chatgpt.error = 'Missing ChatGPT account id. Please re-login.';
+                this.chatgpt.polling = false;
+                return;
+              }
+
+              const accountId = data.accountId;
+              const email = data.email;
+              const displayName = email || accountId;
+
+              // Store account
+              this.chatgpt.accounts[accountId] = {
+                token: data.accessToken,
+                accountId: accountId,
+                email: email,
+                displayName: displayName
+              };
+              this.chatgpt.activeAccount = accountId;
               this.chatgpt.connected = true;
-              this.chatgpt.token = data.accessToken;
-              this.chatgpt.accountId = data.accountId || null;
               this.chatgpt.polling = false;
               this.chatgpt.showInput = false;
-              // Save token to localStorage
-              localStorage.setItem('chatgpt_token', data.accessToken);
-              if (data.accountId) {
-                localStorage.setItem('chatgpt_account_id', data.accountId);
-              } else {
-                localStorage.removeItem('chatgpt_account_id');
-                this.chatgpt.error = 'Missing ChatGPT account id. Please re-login.';
-              }
+
+              // Save to localStorage
+              localStorage.setItem('chatgpt_accounts', JSON.stringify(this.chatgpt.accounts));
+              localStorage.setItem('chatgpt_active_account', accountId);
             } else if (data.status === 'pending') {
               setTimeout(() => this.pollChatGPT(), 5000);
             } else {
@@ -616,18 +760,36 @@
           }
         },
 
-        // Disconnect ChatGPT and clear token
+        // Disconnect ChatGPT and clear active account
         disconnectChatGPT() {
-          this.chatgpt.connected = false;
-          this.chatgpt.token = null;
-          this.chatgpt.accountId = null;
+          if (this.chatgpt.activeAccount) {
+            // Remove active account
+            delete this.chatgpt.accounts[this.chatgpt.activeAccount];
+            this.chatgpt.activeAccount = null;
+
+            // If other accounts exist, switch to first one
+            const remainingAccounts = Object.keys(this.chatgpt.accounts);
+            if (remainingAccounts.length > 0) {
+              this.chatgpt.activeAccount = remainingAccounts[0];
+              this.chatgpt.connected = true;
+            } else {
+              this.chatgpt.connected = false;
+            }
+
+            // Update localStorage
+            localStorage.setItem('chatgpt_accounts', JSON.stringify(this.chatgpt.accounts));
+            if (this.chatgpt.activeAccount) {
+              localStorage.setItem('chatgpt_active_account', this.chatgpt.activeAccount);
+            } else {
+              localStorage.removeItem('chatgpt_active_account');
+            }
+          }
+
           this.chatgpt.deviceId = '';
           this.chatgpt.sessionId = null;
           this.chatgpt.polling = false;
           this.chatgpt.showInput = false;
           this.chatgpt.error = null;
-          localStorage.removeItem('chatgpt_token');
-          localStorage.removeItem('chatgpt_account_id');
         },
 
         // Fetch tunnel providers
