@@ -34,7 +34,11 @@ Tokens stay local in your browser storage. If you enable a tunnel, it only forwa
 
 <img src="public/assets/chat.png" alt="Use the generated key in Cursor" width="420">
 
-Demo video: [public/assets/demo.mp4](public/assets/demo.mp4)
+Demo video (click to open the live landing page):
+
+<a href="https://buremba.github.io/sub-bridge/">
+  <video src="https://raw.githubusercontent.com/buremba/sub-bridge/main/public/assets/demo.mp4" width="640" controls muted playsinline poster="https://raw.githubusercontent.com/buremba/sub-bridge/main/public/assets/setup.png"></video>
+</a>
 
 ## Quick start (Cursor MCP)
 
