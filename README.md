@@ -37,12 +37,16 @@ Use ChatGPT Pro/Max, Claude Max, etc. directly in Cursor via an MCP-managed Open
 
 ```mermaid
 graph LR
-  A[Cursor] --> B[Sub Bridge MCP server]
+  A[Cursor] --> B[MCP server]
   A --> C[Local OpenAI-compatible proxy]
   B --> F[OpenAI OAuth]
   B --> G[Claude OAuth]
   C --> D[Claude APIs]
   C --> E[OpenAI APIs]
+  subgraph SB[Sub-bridge]
+    B
+    C
+  end
 ```
 
 Sub Bridge is an MCP server that includes OpenAI API proxy. It lets you login with Claude or ChatGPT and generate API keys for the proxy, which then set in Cursor Settings as an external provider. 
