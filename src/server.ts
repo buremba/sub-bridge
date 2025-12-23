@@ -156,14 +156,13 @@ export async function startServer(config: ServerConfig): Promise<StartedServer> 
         : `http://localhost:${info.port}`
 
       log()
-      log(chalk.bold.cyan('  Sub Bridge HTTP Server'))
+      log(chalk.bold.cyan('  Sub Bridge OpenAI API Gateway and MCP Server'))
       log(chalk.dim('  ─────────────────────────────────────'))
       log()
       log(' ', chalk.green(publicUrl))
       log(chalk.dim(`  Port: ${info.port}`))
       log()
       log(chalk.dim('  API key format: o3=opus-4.5,o3-mini=sonnet-4.5:sk-ant-xxx'))
-      log()
 
       resolve({
         port: info.port,

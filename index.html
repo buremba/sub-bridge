@@ -112,28 +112,23 @@
           <div class="flex items-center gap-2 text-xs">
             <span class="h-2 w-2 rounded-full" :class="claude.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="claude.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="claude.connected ? 'Connected' : 'Not connected'"></span>
-            <!-- Account Switcher (show when multiple accounts) -->
-            <template x-if="Object.keys(claude.accounts).length > 1">
-              <select
-                x-model="claude.activeAccount"
-                @change="localStorage.setItem('claude_active_account', claude.activeAccount)"
-                class="ml-2 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200 focus:border-neutral-600 focus:outline-none"
-              >
-                <template x-for="email in Object.keys(claude.accounts)" :key="email">
-                  <option :value="email" x-text="claude.accounts[email].displayName || email"></option>
-                </template>
-              </select>
-            </template>
-            <template x-if="claude.connected">
-              <button
-                @click="disconnectClaude()"
-                class="ml-1 text-xs text-neutral-400 hover:text-red-400 transition"
-                title="Disconnect and clear token"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </template>
           </div>
+          <template x-if="Object.keys(claude.accounts).length">
+            <div class="mt-1 flex flex-col gap-1">
+              <template x-for="email in Object.keys(claude.accounts)" :key="'claude-account-' + email">
+                <div class="flex items-center gap-2 text-xs">
+                  <span class="text-neutral-300 font-mono" x-text="claude.accounts[email].displayName || email"></span>
+                  <button
+                    @click="disconnectClaude(email)"
+                    class="text-xs text-neutral-400 hover:text-red-400 transition"
+                    title="Disconnect account"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
         <!-- Claude Error -->
         <template x-if="claude.error">
@@ -173,28 +168,26 @@
           <div class="flex items-center gap-2 text-xs">
             <span class="h-2 w-2 rounded-full" :class="chatgpt.connected ? 'bg-emerald-400' : 'bg-neutral-600'"></span>
             <span class="text-xs" :class="chatgpt.connected ? 'text-emerald-400' : 'text-neutral-500'" x-text="chatgpt.connected ? 'Connected' : 'Not connected'"></span>
-            <!-- Account Switcher (show when multiple accounts) -->
-            <template x-if="Object.keys(chatgpt.accounts).length > 1">
-              <select
-                x-model="chatgpt.activeAccount"
-                @change="localStorage.setItem('chatgpt_active_account', chatgpt.activeAccount)"
-                class="ml-2 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-xs text-neutral-200 focus:border-neutral-600 focus:outline-none"
-              >
-                <template x-for="accountId in Object.keys(chatgpt.accounts)" :key="accountId">
-                  <option :value="accountId" x-text="chatgpt.accounts[accountId].displayName || accountId"></option>
-                </template>
-              </select>
-            </template>
-            <template x-if="chatgpt.connected">
-              <button
-                @click="disconnectChatGPT()"
-                class="ml-1 text-xs text-neutral-400 hover:text-red-400 transition"
-                title="Disconnect and clear token"
-              >
-                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </template>
           </div>
+          <template x-if="Object.keys(chatgpt.accounts).length">
+            <div class="mt-1 flex flex-col gap-1">
+              <template x-for="accountId in Object.keys(chatgpt.accounts)" :key="'chatgpt-account-' + accountId">
+                <div class="flex items-center gap-2 text-xs">
+                  <span
+                    class="text-neutral-300 font-mono"
+                    x-text="chatgpt.accounts[accountId].displayName && chatgpt.accounts[accountId].displayName !== accountId ? chatgpt.accounts[accountId].displayName + ' (' + accountId + ')' : accountId"
+                  ></span>
+                  <button
+                    @click="disconnectChatGPT(accountId)"
+                    class="text-xs text-neutral-400 hover:text-red-400 transition"
+                    title="Disconnect account"
+                  >
+                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </template>
         </div>
         <!-- ChatGPT Error -->
         <template x-if="chatgpt.error">
@@ -332,7 +325,7 @@
                       <template x-if="Object.keys(claude.accounts).length > 1">
                         <select
                           x-model="route.account"
-                          x-init="route.account = route.account || claude.activeAccount"
+                          x-init="route.account = route.account || firstClaudeAccountId"
                           class="rounded-lg border border-neutral-800 bg-neutral-950 px-2 py-2 text-sm text-neutral-100 focus:border-neutral-600 focus:outline-none"
                         >
                           <template x-for="email in Object.keys(claude.accounts)" :key="'route-account-' + email">
@@ -357,7 +350,7 @@
                     </div>
                   </template>
                   <button
-                    @click="routes.push({ cursor: '', claude: '', account: claude.activeAccount || '' })"
+                    @click="routes.push({ cursor: '', claude: '', account: firstClaudeAccountId || '' })"
                     class="inline-flex items-center gap-1 text-sm text-neutral-400 hover:text-neutral-200 transition mt-1"
                   >
                     <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
@@ -454,7 +447,6 @@
         // Auth state
         claude: {
           accounts: {},         // Map of email -> account data
-          activeAccount: null,  // Currently active email
           connected: false,
           code: '',
           loading: false,
@@ -463,7 +455,6 @@
         },
         chatgpt: {
           accounts: {},         // Map of accountId -> account data
-          activeAccount: null,  // Currently active accountId
           connected: false,
           deviceId: '',
           sessionId: null,
@@ -528,6 +519,14 @@
           return selected ? selected.name : 'Tunnel';
         },
 
+        get firstClaudeAccountId() {
+          return Object.keys(this.claude.accounts)[0] || '';
+        },
+
+        get firstChatGptAccountId() {
+          return Object.keys(this.chatgpt.accounts)[0] || '';
+        },
+
         // Label text for the tunnel/domain input
         get tunnelLabel() {
           if (this.hasTunnel) {
@@ -547,10 +546,13 @@
         get apiKey() {
           const keys = [];
           const claudeMappings = new Map();
+          const fallbackClaudeAccountId = this.firstClaudeAccountId;
 
           for (const route of this.routes) {
             if (!route.cursor || !route.claude) continue;
-            const accountId = route.account || this.claude.activeAccount;
+            const accountId = route.account && this.claude.accounts[route.account]
+              ? route.account
+              : fallbackClaudeAccountId;
             if (!accountId) continue;
             const claudeAccount = this.claude.accounts[accountId];
             if (!claudeAccount || !claudeAccount.token) continue;
@@ -566,14 +568,16 @@
             keys.push(`${group.mappings.join(',')}:${group.token}`);
           }
 
-          const chatgptAccount = this.chatgpt.activeAccount ? this.chatgpt.accounts[this.chatgpt.activeAccount] : null;
+          const chatgptAccountId = this.firstChatGptAccountId;
+          const chatgptAccount = chatgptAccountId ? this.chatgpt.accounts[chatgptAccountId] : null;
           if (chatgptAccount && chatgptAccount.token) {
             const chatgptKey = chatgptAccount.accountId
               ? `${chatgptAccount.token}#${chatgptAccount.accountId}`
               : chatgptAccount.token;
             keys.push(chatgptKey);
           } else if (!keys.length) {
-            const claudeAccount = this.claude.activeAccount ? this.claude.accounts[this.claude.activeAccount] : null;
+            const claudeAccountId = this.firstClaudeAccountId;
+            const claudeAccount = claudeAccountId ? this.claude.accounts[claudeAccountId] : null;
             if (claudeAccount && claudeAccount.token) {
               keys.push(claudeAccount.token);
             }
@@ -606,6 +610,12 @@
             localStorage.removeItem('chatgpt_account_id');
             console.log('[Migration] Cleared old tokens - please re-login');
           }
+          if (localStorage.getItem('claude_active_account')) {
+            localStorage.removeItem('claude_active_account');
+          }
+          if (localStorage.getItem('chatgpt_active_account')) {
+            localStorage.removeItem('chatgpt_active_account');
+          }
 
           // Load Claude accounts from localStorage
           const savedClaudeAccounts = localStorage.getItem('claude_accounts');
@@ -616,11 +626,7 @@
               console.error('Failed to parse Claude accounts:', e);
             }
           }
-          const savedClaudeActive = localStorage.getItem('claude_active_account');
-          if (savedClaudeActive && this.claude.accounts[savedClaudeActive]) {
-            this.claude.activeAccount = savedClaudeActive;
-            this.claude.connected = true;
-          }
+          this.claude.connected = Object.keys(this.claude.accounts).length > 0;
 
           // Load ChatGPT accounts from localStorage
           const savedChatGPTAccounts = localStorage.getItem('chatgpt_accounts');
@@ -631,11 +637,7 @@
               console.error('Failed to parse ChatGPT accounts:', e);
             }
           }
-          const savedChatGPTActive = localStorage.getItem('chatgpt_active_account');
-          if (savedChatGPTActive && this.chatgpt.accounts[savedChatGPTActive]) {
-            this.chatgpt.activeAccount = savedChatGPTActive;
-            this.chatgpt.connected = true;
-          }
+          this.chatgpt.connected = Object.keys(this.chatgpt.accounts).length > 0;
 
           try {
             const res = await fetch('/api/config');
@@ -689,7 +691,6 @@
                 email: email,
                 displayName: email
               };
-              this.claude.activeAccount = email;
               this.claude.connected = true;
               this.claude.code = '';
               this.claude.showInput = false;
@@ -700,7 +701,6 @@
 
               // Save to localStorage
               localStorage.setItem('claude_accounts', JSON.stringify(this.claude.accounts));
-              localStorage.setItem('claude_active_account', email);
 
               // If in OAuth flow, complete it
               if (this.oauth.active) {
@@ -720,35 +720,21 @@
           const hasRoutes = this.routes.some(route => route.cursor && route.claude);
           if (hasRoutes) return;
           this.routes = [
-            { cursor: 'o3', claude: 'opus-4.5', account: this.claude.activeAccount || '' },
-            { cursor: 'o3-mini', claude: 'sonnet-4.5', account: this.claude.activeAccount || '' }
+            { cursor: 'o3', claude: 'opus-4.5', account: this.firstClaudeAccountId || '' },
+            { cursor: 'o3-mini', claude: 'sonnet-4.5', account: this.firstClaudeAccountId || '' }
           ];
         },
 
-        // Disconnect Claude and clear active account
-        disconnectClaude() {
-          if (this.claude.activeAccount) {
-            // Remove active account
-            delete this.claude.accounts[this.claude.activeAccount];
-            this.claude.activeAccount = null;
-
-            // If other accounts exist, switch to first one
-            const remainingAccounts = Object.keys(this.claude.accounts);
-            if (remainingAccounts.length > 0) {
-              this.claude.activeAccount = remainingAccounts[0];
-              this.claude.connected = true;
-            } else {
-              this.claude.connected = false;
-            }
-
-            // Update localStorage
-            localStorage.setItem('claude_accounts', JSON.stringify(this.claude.accounts));
-            if (this.claude.activeAccount) {
-              localStorage.setItem('claude_active_account', this.claude.activeAccount);
-            } else {
-              localStorage.removeItem('claude_active_account');
-            }
+        // Disconnect Claude account
+        disconnectClaude(accountId) {
+          if (!accountId || !this.claude.accounts[accountId]) return;
+          delete this.claude.accounts[accountId];
+          this.claude.connected = Object.keys(this.claude.accounts).length > 0;
+          const fallbackAccountId = this.firstClaudeAccountId;
+          for (const route of this.routes) {
+            if (route.account === accountId) route.account = fallbackAccountId || '';
           }
+          localStorage.setItem('claude_accounts', JSON.stringify(this.claude.accounts));
 
           this.claude.code = '';
           this.claude.showInput = false;
@@ -801,14 +787,12 @@
                 email: email,
                 displayName: displayName
               };
-              this.chatgpt.activeAccount = accountId;
               this.chatgpt.connected = true;
               this.chatgpt.polling = false;
               this.chatgpt.showInput = false;
 
               // Save to localStorage
               localStorage.setItem('chatgpt_accounts', JSON.stringify(this.chatgpt.accounts));
-              localStorage.setItem('chatgpt_active_account', accountId);
 
               // If in OAuth flow, complete it
               if (this.oauth.active) {
@@ -826,30 +810,12 @@
           }
         },
 
-        // Disconnect ChatGPT and clear active account
-        disconnectChatGPT() {
-          if (this.chatgpt.activeAccount) {
-            // Remove active account
-            delete this.chatgpt.accounts[this.chatgpt.activeAccount];
-            this.chatgpt.activeAccount = null;
-
-            // If other accounts exist, switch to first one
-            const remainingAccounts = Object.keys(this.chatgpt.accounts);
-            if (remainingAccounts.length > 0) {
-              this.chatgpt.activeAccount = remainingAccounts[0];
-              this.chatgpt.connected = true;
-            } else {
-              this.chatgpt.connected = false;
-            }
-
-            // Update localStorage
-            localStorage.setItem('chatgpt_accounts', JSON.stringify(this.chatgpt.accounts));
-            if (this.chatgpt.activeAccount) {
-              localStorage.setItem('chatgpt_active_account', this.chatgpt.activeAccount);
-            } else {
-              localStorage.removeItem('chatgpt_active_account');
-            }
-          }
+        // Disconnect ChatGPT account
+        disconnectChatGPT(accountId) {
+          if (!accountId || !this.chatgpt.accounts[accountId]) return;
+          delete this.chatgpt.accounts[accountId];
+          this.chatgpt.connected = Object.keys(this.chatgpt.accounts).length > 0;
+          localStorage.setItem('chatgpt_accounts', JSON.stringify(this.chatgpt.accounts));
 
           this.chatgpt.deviceId = '';
           this.chatgpt.sessionId = null;
@@ -936,9 +902,11 @@
           try {
             // Build providers object with current credentials
             const providers = {};
+            const claudeAccountId = this.firstClaudeAccountId;
+            const chatgptAccountId = this.firstChatGptAccountId;
 
-            if (this.claude.connected && this.claude.activeAccount) {
-              const account = this.claude.accounts[this.claude.activeAccount];
+            if (this.claude.connected && claudeAccountId) {
+              const account = this.claude.accounts[claudeAccountId];
               if (account) {
                 providers.claude = {
                   access_token: account.token,
@@ -947,8 +915,8 @@
               }
             }
 
-            if (this.chatgpt.connected && this.chatgpt.activeAccount) {
-              const account = this.chatgpt.accounts[this.chatgpt.activeAccount];
+            if (this.chatgpt.connected && chatgptAccountId) {
+              const account = this.chatgpt.accounts[chatgptAccountId];
               if (account) {
                 providers.chatgpt = {
                   access_token: account.token,
@@ -963,7 +931,7 @@
             }
 
             // Get user ID (email or account ID)
-            const userId = this.claude.activeAccount || this.chatgpt.activeAccount || 'anonymous';
+            const userId = claudeAccountId || chatgptAccountId || 'anonymous';
 
             // Request authorization code
             const res = await fetch('/oauth/code', {

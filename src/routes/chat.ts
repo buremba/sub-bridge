@@ -961,6 +961,9 @@ Examples:
 export function createChatRoutes() {
   const app = new Hono()
 
+  // Base route for quick health checks
+  app.get('/', (c) => c.json({ status: 'ok' }))
+
   // Models endpoint
   app.get('/models', async (c) => {
     const response = await fetch('https://models.dev/api.json')
