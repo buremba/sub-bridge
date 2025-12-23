@@ -2,9 +2,7 @@
 
 Use ChatGPT Pro/Max, Claude Max, etc. directly in Cursor via an MCP-managed OpenAI-compatible proxy.
 
-Links:
-- Repo: https://github.com/buremba/sub-bridge
-- Landing page: https://buremba.github.io/sub-bridge/
+[![Demo video](public/assets/demo.gif)](public/index.html)
 
 ## Why Sub Bridge
 
@@ -34,10 +32,6 @@ Links:
     <td align="center"><img src="public/assets/chat.png" alt="Use the generated key in Cursor" width="360"></td>
   </tr>
 </table>
-
-Demo video (GIF fallback):
-
-![Demo video](public/assets/demo.gif)
 
 ## How it works
 
