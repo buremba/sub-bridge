@@ -26,5 +26,12 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Debug environment
+        run: |
+          echo "Node version: $(node --version)"
+          echo "npm version: $(npm --version)"
+          echo "OIDC token URL: $ACTIONS_ID_TOKEN_REQUEST_URL"
+          echo "OIDC token present: $(if [ -n "$ACTIONS_ID_TOKEN_REQUEST_TOKEN" ]; then echo "yes"; else echo "no"; fi)"
+
       - name: Publish
         run: npm publish --provenance --access public
