@@ -14,7 +14,13 @@ Links:
 
 ## How it works
 
-Cursor -> Sub Bridge MCP server -> Local OpenAI-compatible proxy -> Claude / OpenAI APIs
+```mermaid
+graph LR
+  A[Cursor] --> B[Sub Bridge MCP server]
+  B --> C[Local OpenAI-compatible proxy]
+  C --> D[Claude APIs]
+  C --> E[OpenAI APIs]
+```
 
 Sub Bridge is an MCP server that includes OpenAI API proxy. It lets you login with Claude or ChatGPT and generate API keys for the proxy, which then set in Cursor Settings as an external provider. 
 
