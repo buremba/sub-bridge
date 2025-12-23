@@ -22,30 +22,30 @@ Tokens stay local in your browser storage. If you enable a tunnel, it only forwa
 
 ## Visual setup (from the landing page)
 
-1) Install in Cursor
+1) Install Sub Bridge in Cursor
 
-![Install Sub Bridge in Cursor](public/assets/setup.png)
+<img src="public/assets/setup.png" alt="Install Sub Bridge in Cursor" width="420">
 
-2) Log in with ChatGPT or Claude
+2) Log in with Claude (required)
 
-![Login and connect accounts](public/assets/ui.png)
+<img src="public/assets/ui.png" alt="Login and connect accounts" width="420">
 
 3) Paste the Base URL and API key into Cursor
 
-![Use the generated key in Cursor](public/assets/chat.png)
+<img src="public/assets/chat.png" alt="Use the generated key in Cursor" width="420">
 
 Demo video: [public/assets/demo.mp4](public/assets/demo.mp4)
 
 ## Quick start (Cursor MCP)
 
-1. Install the MCP server:
+1. Install the MCP server in Cursor:
    - Click the button above, or
-   - Add an MCP server in Cursor with:
+   - Add an MCP server with:
      - Command: `npx`
      - Args: `-y sub-bridge`
-2. In Cursor chat, call the tool: `get_connection`
-   - It returns the public URL and a Claude OAuth authorize URL.
-   - Optional: pass `provider=claude` or `provider=openai` to show only that section.
+2. In Cursor chat, call the tool: `get_connection` and complete the Claude OAuth login (required).
+   - It returns the public URL and the Claude authorize URL.
+   - Optional: pass `provider=claude` to show only the Claude section.
    - Option A: Call `get_connection` again with `oauth_code` and `provider=claude` (paste full callback URL or `code#state`) to exchange and return a token.
    - Option B: Use the optional curl snippet shown in `get_connection`.
 3. Copy the public URL from the tool output and set:
