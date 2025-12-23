@@ -23,15 +23,15 @@ jobs:
       - name: Install deps
         run: npm ci
 
-      - name: Debug OIDC
+      - name: Debug OIDC - Get Token
         run: |
-          echo "NODE_AUTH_TOKEN is: ${NODE_AUTH_TOKEN:-empty}"
-          echo "NPM_CONFIG_REGISTRY is: ${NPM_CONFIG_REGISTRY:-empty}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_URL is: ${ACTIONS_ID_TOKEN_REQUEST_URL:-empty}"
-          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN is: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+set}"
+          echo "Fetching OIDC token..."
+          TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm" | jq -r '.value')
+          echo "Token length: ${#TOKEN}"
+          echo "First 100 chars: ${TOKEN:0:100}"
 
       - name: Build
         run: npm run build
 
       - name: Publish
-        run: npm publish --provenance
+        run: npm publish --provenance --loglevel=verbose
