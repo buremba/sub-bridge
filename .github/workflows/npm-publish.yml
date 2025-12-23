@@ -23,6 +23,13 @@ jobs:
       - name: Install deps
         run: npm ci
 
+      - name: Debug OIDC
+        run: |
+          echo "NODE_AUTH_TOKEN is: ${NODE_AUTH_TOKEN:-empty}"
+          echo "NPM_CONFIG_REGISTRY is: ${NPM_CONFIG_REGISTRY:-empty}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL is: ${ACTIONS_ID_TOKEN_REQUEST_URL:-empty}"
+          echo "ACTIONS_ID_TOKEN_REQUEST_TOKEN is: ${ACTIONS_ID_TOKEN_REQUEST_TOKEN:+set}"
+
       - name: Build
         run: npm run build
 
