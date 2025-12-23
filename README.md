@@ -22,17 +22,22 @@ Tokens stay local in your browser storage. If you enable a tunnel, it only forwa
 
 ## Visual setup (from the landing page)
 
-1) Install Sub Bridge in Cursor
-
-<img src="public/assets/setup.png" alt="Install Sub Bridge in Cursor" width="420">
-
-2) Log in with Claude (required)
+1) Log in with Claude (required)
 
 <img src="public/assets/ui.png" alt="Login and connect accounts" width="420">
 
-3) Paste the Base URL and API key into Cursor
+2) Finish setup in Cursor (two steps side-by-side)
 
-<img src="public/assets/chat.png" alt="Use the generated key in Cursor" width="420">
+<table>
+  <tr>
+    <td align="center"><strong>Install Sub Bridge in Cursor</strong></td>
+    <td align="center"><strong>Paste the Base URL and API key</strong></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="public/assets/setup.png" alt="Install Sub Bridge in Cursor" width="360"></td>
+    <td align="center"><img src="public/assets/chat.png" alt="Use the generated key in Cursor" width="360"></td>
+  </tr>
+</table>
 
 Demo video (click to open the live landing page):
 
