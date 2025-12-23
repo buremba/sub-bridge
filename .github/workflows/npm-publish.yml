@@ -29,5 +29,5 @@ jobs:
       - name: Publish
         run: npm publish --provenance
         env:
-          # Tell npm to use OIDC for authentication
-          NPM_CONFIG_PROVENANCE: "true"
+          # Use NPM_TOKEN secret if available, otherwise rely on OIDC
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
