@@ -3,7 +3,7 @@
     ".": {
       "release-type": "node",
       "package-name": "sub-bridge",
-      "initial-version": "0.0.0",
+      "initial-version": "1.0.0",
       "changelog-path": "CHANGELOG.md"
     }
   }
