@@ -19,7 +19,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          registry-url: https://registry.npmjs.org
 
       - name: Install deps
         run: npm ci
@@ -28,4 +27,7 @@ jobs:
         run: npm run build
 
       - name: Publish
-        run: npm publish --access public --provenance
+        run: |
+          unset NODE_AUTH_TOKEN
+          unset NPM_CONFIG_USERCONFIG
+          npm publish --access public --provenance
