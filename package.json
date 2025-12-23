@@ -1,6 +1,6 @@
 {
   "name": "sub-bridge",
-  "version": "2.1.0",
+  "version": "1.0.0",
   "description": "MCP bridge to use ChatGPT Pro, Claude Max, etc. in Cursor via an OpenAI-compatible proxy",
   "main": "dist/cli.js",
   "bin": {
@@ -37,6 +37,7 @@
   "dependencies": {
     "@hono/node-server": "^1.19.7",
     "@modelcontextprotocol/sdk": "^1.0.0",
+    "@sentry/node": "^10.32.1",
     "chalk": "^5.6.2",
     "cloudflared": "^0.7.1",
     "commander": "^14.0.2",
