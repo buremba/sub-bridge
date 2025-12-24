@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.1.0](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.0.2...sub-bridge-v1.1.0) (2025-12-24)
+
+
+### Features
+
+* simplify tunnels to Cloudflare only with named tunnel support ([2a57bc4](https://github.com/buremba/sub-bridge/commit/2a57bc4ee1013dcf38bfd364b03ca93571e07dc4))
+
+
+### Bug Fixes
+
+* add OIDC debug logging to npm publish workflow ([29bec36](https://github.com/buremba/sub-bridge/commit/29bec369a961c4ae67a5800087a5bcc1bb7954f9))
+* add registry-url to setup-node for npm auth ([387c8d9](https://github.com/buremba/sub-bridge/commit/387c8d92c7cbccdc76f5f9e329c243809e9ce20d))
+* add repository url for npm provenance ([db7425e](https://github.com/buremba/sub-bridge/commit/db7425e59f8413bdc5b5020691d3369cecd3d82a))
+* manually exchange OIDC token for npm token ([b1f9564](https://github.com/buremba/sub-bridge/commit/b1f9564cdd0fc79a4511e2b1f51be61c818271ba))
+* set NPM_CONFIG_PROVENANCE for OIDC ([230d881](https://github.com/buremba/sub-bridge/commit/230d8815ecda3b069cd561d9693fa0fcb14e245f))
+* simplify cloudflare tunnel startup to only wait for URL event ([b47fcea](https://github.com/buremba/sub-bridge/commit/b47fcea9296f0c01c498568102316ea47e6b84e1))
+* simplify npm publish command ([4edc1a2](https://github.com/buremba/sub-bridge/commit/4edc1a2b39ef8af96cf01d07bb8f4fa7b8d7d4eb))
+* surface cloudflare tunnel errors (rate limiting, etc.) to user ([86211b9](https://github.com/buremba/sub-bridge/commit/86211b9afadc4c5c9073324ec01486031e8f9006))
+* use NPM_TOKEN secret for npm auth ([95d3c27](https://github.com/buremba/sub-bridge/commit/95d3c27020bbafac5223420f035f7f2b1df4994e))
+* wait for cloudflare tunnel connection after URL is received ([fb62e5e](https://github.com/buremba/sub-bridge/commit/fb62e5e5725e5a0206c97ccb8d3558a13055061e))
+
 ## [1.0.2](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.0.1...sub-bridge-v1.0.2) (2025-12-23)
 
 
