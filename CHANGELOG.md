@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.1.0...sub-bridge-v1.1.1) (2025-12-25)
+
+
+### Bug Fixes
+
+* prevent global cloudflared config from interfering with quick tunnels ([6bbda0b](https://github.com/buremba/sub-bridge/commit/6bbda0b7a2e2cdf381d1375b265cbb8a18d4935d))
+
 ## [1.1.0](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.0.2...sub-bridge-v1.1.0) (2025-12-24)
 
 
