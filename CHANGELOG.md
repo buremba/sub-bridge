@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.2](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.1.1...sub-bridge-v1.1.2) (2025-12-25)
+
+
+### Bug Fixes
+
+* add delay for DNS propagation before quick tunnel health check ([e76f082](https://github.com/buremba/sub-bridge/commit/e76f082bd55c716a133516c51023d9c228e81e50))
+
 ## [1.1.1](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.1.0...sub-bridge-v1.1.1) (2025-12-25)
 
 
