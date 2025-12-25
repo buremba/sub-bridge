@@ -51,7 +51,7 @@ async function verifyTunnelHealth(publicUrl: string, expectedPort: number): Prom
     }
   }
 }
-import { CloudflareTunnelProvider } from './providers'
+import { CloudflareTunnelProvider, ManualTunnelProvider } from './providers'
 
 export class TunnelRegistry {
   private providers: Map<string, TunnelProvider> = new Map()
@@ -60,8 +60,11 @@ export class TunnelRegistry {
   private lastError: string | null = null
 
   constructor() {
-    const provider = new CloudflareTunnelProvider()
-    this.providers.set(provider.id, provider)
+    const cloudflare = new CloudflareTunnelProvider()
+    this.providers.set(cloudflare.id, cloudflare)
+
+    const manual = new ManualTunnelProvider()
+    this.providers.set(manual.id, manual)
   }
 
   async getProviders(): Promise<ProviderInfo[]> {
@@ -112,6 +115,7 @@ export class TunnelRegistry {
     }
 
     const isQuickCloudflare = providerId === 'cloudflare' && !namedUrl
+    const isManual = providerId === 'manual'
     const maxAttempts = isQuickCloudflare ? 4 : 1
     let lastError: Error | null = null
 
@@ -120,7 +124,10 @@ export class TunnelRegistry {
         this.lastError = null
         this.activeTunnel = await provider.start(localPort, namedUrl)
         this.startedAt = new Date().toISOString()
-        await verifyTunnelHealth(this.activeTunnel.publicUrl, localPort)
+        // Skip health check for manual provider - user trusts their own URL
+        if (!isManual) {
+          await verifyTunnelHealth(this.activeTunnel.publicUrl, localPort)
+        }
         return this.getStatus()
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error))

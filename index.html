@@ -255,8 +255,37 @@
 
               <template x-if="!hasTunnel">
                 <div class="space-y-3">
-                  <!-- Named tunnel selector (only when authenticated) -->
-                  <template x-if="selectedProvider?.authenticated && selectedProvider?.namedTunnels?.length">
+                  <!-- Provider selector -->
+                  <template x-if="tunnel.providers.length > 1">
+                    <div class="space-y-2">
+                      <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Provider</label>
+                      <select
+                        x-model="tunnel.selectedProvider"
+                        class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 focus:border-neutral-600 focus:outline-none"
+                      >
+                        <template x-for="p in tunnel.providers.filter(p => p.available)" :key="p.id">
+                          <option :value="p.id" x-text="p.name"></option>
+                        </template>
+                      </select>
+                    </div>
+                  </template>
+
+                  <!-- Custom URL input (for manual provider) -->
+                  <template x-if="tunnel.selectedProvider === 'manual'">
+                    <div class="space-y-2">
+                      <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Your Public URL</label>
+                      <input
+                        type="text"
+                        x-model="tunnel.customDomain"
+                        placeholder="https://your-domain.com or http://your-ip:port"
+                        class="w-full rounded-lg border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-neutral-600 focus:outline-none"
+                      >
+                      <p class="text-[10px] text-neutral-500">Enter the public URL where this server is accessible (via reverse proxy, port forwarding, etc.)</p>
+                    </div>
+                  </template>
+
+                  <!-- Named tunnel selector (only for Cloudflare when authenticated) -->
+                  <template x-if="tunnel.selectedProvider === 'cloudflare' && selectedProvider?.authenticated && selectedProvider?.namedTunnels?.length">
                     <div class="space-y-2">
                       <label class="text-[10px] font-semibold uppercase tracking-wider text-neutral-500">Use Named Tunnel (optional)</label>
                       <select
@@ -270,6 +299,7 @@
                       </select>
                     </div>
                   </template>
+
                   <div class="flex flex-wrap items-center justify-between gap-3">
                     <div class="flex flex-wrap gap-2" x-show="tunnel.loading">
                       <span class="h-7 w-20 rounded-lg border border-neutral-800 bg-neutral-900/60 animate-pulse"></span>
@@ -277,9 +307,9 @@
                     <template x-if="!tunnel.status.active && !hasExternalUrl">
                       <button
                         @click="startTunnel()"
-                        :disabled="tunnel.starting || !tunnel.selectedProvider || !tunnel.providers.some(p => p.available)"
+                        :disabled="tunnel.starting || !tunnel.selectedProvider || !tunnel.providers.some(p => p.available) || (tunnel.selectedProvider === 'manual' && !tunnel.customDomain)"
                         class="rounded-lg bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-950 hover:bg-white disabled:opacity-50"
-                        x-text="tunnel.starting ? 'Creating...' : 'Create Tunnel'"
+                        x-text="tunnel.starting ? (tunnel.selectedProvider === 'manual' ? 'Setting...' : 'Creating...') : (tunnel.selectedProvider === 'manual' ? 'Set URL' : 'Create Tunnel')"
                         x-show="!tunnel.loading"
                       ></button>
                     </template>
