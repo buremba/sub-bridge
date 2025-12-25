@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.1.2...sub-bridge-v1.2.0) (2025-12-25)
+
+
+### Features
+
+* add custom URL provider for users with their own public IP/domain ([ccc5719](https://github.com/buremba/sub-bridge/commit/ccc57191df3ddfaf567a257e50ecae12f4a63dbe))
+
 ## [1.1.2](https://github.com/buremba/sub-bridge/compare/sub-bridge-v1.1.1...sub-bridge-v1.1.2) (2025-12-25)
 
 
