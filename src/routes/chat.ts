@@ -329,12 +329,22 @@ function convertMessages(messages: any[]): any[] {
     converted.push({ role: msg.role, content: msg.content ?? '' })
   }
 
-  const last = converted[converted.length - 1]
-  if (last?.role === 'assistant') {
-    if (typeof last.content === 'string') last.content = last.content.trimEnd() || '...'
-    else if (Array.isArray(last.content)) {
-      for (const block of last.content) {
-        if (block.type === 'text') block.text = (block.text?.trimEnd()) || '...'
+  // Ensure all assistant messages have non-empty content (required by Anthropic API:
+  // "all messages must have non-empty content except for the optional final assistant message")
+  for (const msg of converted) {
+    if (msg.role !== 'assistant') continue
+
+    if (typeof msg.content === 'string') {
+      msg.content = msg.content.trimEnd() || '...'
+    } else if (Array.isArray(msg.content)) {
+      if (msg.content.length === 0) {
+        msg.content = [{ type: 'text', text: '...' }]
+      } else {
+        for (const block of msg.content) {
+          if (block.type === 'text') {
+            block.text = (block.text?.trimEnd()) || '...'
+          }
+        }
       }
     }
   }
