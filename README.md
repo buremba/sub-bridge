@@ -14,13 +14,13 @@ Use ChatGPT Pro/Max, Claude Max, etc. directly in Cursor via an MCP-managed Open
 
 1. Install the MCP server:
 
-[![Add Sub Bridge to Cursor](https://cursor.com/deeplink/mcp-install-dark.png)](cursor://anysphere.cursor-deeplink/mcp/install?name=sub-bridge&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJzdWItYnJpZGdlIl19)
+[![Add Sub Bridge to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](cursor://anysphere.cursor-deeplink/mcp/install?name=sub-bridge&config=eyJjb21tYW5kIjogIm5weCIsICJhcmdzIjogWyIteSIsICJzdWItYnJpZGdlIl19)
 
-1) Ask chat to connect ChatGPT Pro or Claude Max and login with your credentials locally and generate API Key for Cursor locally.
+2. Ask chat to connect ChatGPT Pro or Claude Max and login with your credentials locally and generate API Key for Cursor locally.
 
 <img src="public/assets/ui.png" alt="Login and connect accounts" width="420">
 
-2) Finish setup in Cursor (two steps side-by-side)
+3. Finish setup in Cursor (two steps side-by-side)
 
 <table>
   <tr>
