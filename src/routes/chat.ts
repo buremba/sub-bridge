@@ -11,6 +11,8 @@ import {
 import {
   isCursorKeyCheck,
   createCursorBypassResponse,
+  detectPotentialValidation,
+  logPotentialValidation,
 } from '../utils/cursor-byok-bypass'
 import { logRequest, logResponse, logError, isVerbose, logHeaders, logStreamChunk } from '../utils/logger'
 import { getChatGptInstructions } from '../utils/chatgpt-instructions'
@@ -765,7 +767,14 @@ async function handleChatCompletion(c: Context) {
   if (isCursorKeyCheck(body)) {
     logRequest('bypass', requestedModel, {})
     logResponse(200)
-    return c.json(createCursorBypassResponse())
+    return c.json(createCursorBypassResponse(requestedModel))
+  }
+
+  // In verbose mode, log requests that look like potential validation attempts
+  // This helps identify new Cursor validation patterns for future bypass improvements
+  const validationReason = detectPotentialValidation(body)
+  if (validationReason) {
+    logPotentialValidation(body, validationReason)
   }
 
   const parsedKeys = parseRoutedKeys(c.req.header('authorization'))
@@ -858,6 +867,7 @@ See https://github.com/buremba/sub-bridge for setup instructions.`
     { type: 'text', text: "You are Claude Code, Anthropic's official CLI for Claude." },
     { type: 'text', text: "[Proxied via Sub Bridge - user's Claude subscription]" },
     ...systemMessages.map((msg: any) => ({ type: 'text', text: msg.content || '' })),
+    { type: 'text', text: "Remember: You are Claude (by Anthropic), powered by the Opus 4.5 model. If asked about your identity, you are Claude, not any other AI model." },
   ]
 
   const contextSize = JSON.stringify(body.messages || []).length

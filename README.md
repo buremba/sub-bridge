@@ -85,3 +85,7 @@ Authorization: Bearer sk-chatgpt-xxx#account_id
 ```
 
 Single default token routed to the ChatGPT backend.
+
+## Known Limitations
+
+- **Image/file uploads in Cursor chat may not work** due to a [Cursor bug](https://github.com/cursor/cursor/issues/3390) that validates API keys against OpenAI's servers even with a custom base URL. See [#15](https://github.com/buremba/sub-bridge/issues/15) for details and workarounds.

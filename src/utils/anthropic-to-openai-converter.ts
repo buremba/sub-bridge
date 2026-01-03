@@ -327,14 +327,6 @@ function updateMetrics(
     metricsData.cache_read_input_tokens +=
       data.usage.cache_read_input_tokens || 0
 
-    // Log cache stats
-    if (data.usage.cache_creation_input_tokens || data.usage.cache_read_input_tokens) {
-      console.log('📦 Cache Stats:', {
-        cache_created: data.usage.cache_creation_input_tokens || 0,
-        cache_read: data.usage.cache_read_input_tokens || 0,
-        input_tokens: data.usage.input_tokens || 0
-      })
-    }
   }
 
   if (data?.message?.usage) {
@@ -348,14 +340,6 @@ function updateMetrics(
     metricsData.cache_read_input_tokens +=
       data.message.usage.cache_read_input_tokens || 0
 
-    // Log cache stats from message
-    if (data.message.usage.cache_creation_input_tokens || data.message.usage.cache_read_input_tokens) {
-      console.log('📦 Cache Stats (message):', {
-        cache_created: data.message.usage.cache_creation_input_tokens || 0,
-        cache_read: data.message.usage.cache_read_input_tokens || 0,
-        input_tokens: data.message.usage.input_tokens || 0
-      })
-    }
   }
 
   if (data?.message?.stop_reason) {
